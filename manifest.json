@@ -1,0 +1,36 @@
+{
+    "manifest_version": 2,
+
+    "name": "Acquia Logstream Client",
+    "description": "View logs generated as you browse around your site.",
+    "version": "1.0",
+    "minimum_chrome_version": "16.0",
+
+    "options_page": "options.html",
+    "options_ui": {
+        "page": "options.html"
+    },
+
+    "permissions": [
+        "storage",
+        "tabs",
+        "<all_urls>",
+        "http://*/",
+        "https://*/",
+        "https://cloudapi.acquia.com/",
+        "webRequest",
+        "webRequestBlocking"
+    ],
+
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    },
+
+    "background": {
+        "scripts": ["background.js"]
+    },
+
+    "devtools_page": "devtools.html"
+}

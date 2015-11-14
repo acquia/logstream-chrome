@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html class="options-page">
+<head>
+    <meta charset="utf-8">
+    <title>Acquia Logstream Client Options</title>
+    <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+    <div id="form-wrapper">
+        <p class="description">
+            Provide your Acquia login credentials in order to connect to the
+            Acquia Cloud log streaming API. They will be saved automatically.
+        </p>
+        <form id="controls">
+            <fieldset>
+                <img alt="Acquia" height="48" src="icon48.png" width="48" />
+            </fieldset>
+            <fieldset class="stacked">
+                <label for="username">
+                    <span class="label">Email:</span>
+                    <input autocomplete="on" autofocus id="username" inputmode="verbatim" maxlength="256" spellcheck="false" type="text" />
+                </label>
+                <label for="password">
+                    <span class="label">Password:</span>
+                    <input id="password" inputmode="verbatim" maxlength="256" spellcheck="false" type="password" />
+                </label>
+            </fieldset>
+        </form>
+        <p class="warning">
+            Note that these credentials are saved unencrypted on your local
+            machine (as are all passwords that Chrome remembers). This is
+            generally not an issue because stealing the credentials would
+            require physical or privileged access to your machine, in which
+            case someone could just install a keylogger anyway. However, if you
+            do not want your Acquia Cloud password stored unencrypted locally,
+            please remember to come back to this options page and erase it
+            after you finish using this extension.
+        </p>
+    </div>
+    <div id="content"></div>
+    <script src="options.js"></script>
+</body>
+</html>

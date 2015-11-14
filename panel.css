@@ -1,0 +1,194 @@
+html,
+body {
+    background-color: #FEFEFE;
+    color: #222222;
+    font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+    font-size: 18px;
+    line-height: 1.4em;
+    margin: 0;
+    padding: 0;
+    text-rendering: optimizelegibility;
+}
+
+.options-page {
+    background-color: rgba(252, 252, 253, 1);
+}
+
+.options-page #form-wrapper {
+    border: 2px solid #676767;
+    margin: 0 auto;
+    padding: 25px 60px 40px;
+    width: 600px;
+}
+
+.options-page #controls {
+    margin: 35px auto;
+}
+
+.options-page .stacked {
+    width: 390px;
+}
+
+.options-page fieldset {
+    padding: 0 15px;
+}
+
+.options-page .label {
+    font-size: 20px;
+}
+
+.options-page #controls input {
+    font-size: 20px;
+    line-height: 1.6em;
+    padding: 1px 8px;
+}
+
+p.description {
+    line-height: 1.6em;
+}
+
+p.warning {
+    color: #999999;
+    font-size: 12px;
+    line-height: 1.4em;
+}
+
+p.error {
+    color: red;
+    margin: 1em 0 1.5em;
+    text-align: center;
+}
+
+.error a {
+    color: #9A2710; /* dark red */
+}
+
+.hidden {
+    display: none;
+}
+
+#form-wrapper {
+    background-color: rgba(212, 225, 230, 1); /* light blue */
+    border-bottom: 2px solid #676767;
+}
+
+#controls {
+    display: table;
+    margin: 0 auto;
+    padding: 10px 0;
+}
+
+fieldset {
+    border: 0;
+    display: inline-block;
+    margin: 0;
+    padding: 0 20px;
+    vertical-align: middle;
+}
+
+label[for="logtypes"] {
+    display: block;
+}
+
+.label {
+    font-weight: bold;
+}
+
+.stacked {
+    width: 280px;
+}
+
+.stacked label {
+    display: inline-block;
+    padding: 2.5px 0;
+}
+
+.stacked .label {
+    display: inline-block;
+    width: 120px;
+}
+
+#connect {
+    font-size: 21px;
+    font-weight: bold;
+    padding: 3px 9px;
+}
+
+.message {
+    border-bottom: 1px solid #999999;
+    padding: 2px;
+}
+
+.message:last-child {
+    border-bottom-width: 0;
+}
+
+.message span {
+    display: inline-block;
+}
+
+.collapsed {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.datetime {
+    margin-right: 10px;
+    width: 180px;
+}
+
+.type {
+    margin-right: 10px;
+    width: 154px;
+}
+
+.received .type::before {
+    color: rgba(10, 140, 114, 1); /* aqua */
+    content: "\25C0 ";
+    margin-right: 5px;
+}
+
+.sent .type::before {
+    color: rgba(51, 10, 105, 1); /* purple */
+    content: "\25b6 ";
+    margin-right: 5px;
+}
+
+.debug,
+.log {
+    background-color: rgba(238, 238, 238, 1); /* #eee */
+}
+
+.extension-error {
+    background-color: rgba(255, 96, 96, 1); /* red */
+}
+
+.apache-request.http-status-200,
+.bal-request.http-status-200,
+.varnish-request.http-status-200 {
+    background-color: rgba(192, 255, 192, 1); /* green */
+}
+
+.apache-error,
+.apache-request.http-status-500,
+.bal-request.http-status-500,
+.php-error,
+.varnish-request.http-status-500 {
+    background-color: rgba(255, 192, 192, 1); /* pink */
+}
+
+.apache-request.http-status-400,
+.bal-request.http-status-400,
+.varnish-request.http-status-400 {
+    background-color: rgba(255, 208, 144, 1); /* orange */
+}
+
+.drupal-request,
+.drupal-watchdog {
+    background-color: rgba(176, 224, 255, 1); /* blue */
+}
+
+.mysql-slow {
+    background-color: rgba(255, 232, 160, 1); /* yellow */
+}
