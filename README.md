@@ -49,7 +49,7 @@ website and watch as the logs are generated in real time.
 
 ## TODO
 
-- TODOs
+- Automatically picking the sitename / environment based on domain is working, but it gets overridden when the site list finishes refreshing. Will probably have to delete that section, move domains back into the sitelist object, and detect the hostname inside of the environment render function so we can default to the right site / env there.
 - Add an option to only show logs caused by requests the current browser made (on pages that can stream logs) using X-Request-ID
     Make background.js send X-Request-ID correctly
     Filter to logs with request_id="<id>" for IDs that we sent
@@ -60,7 +60,7 @@ website and watch as the logs are generated in real time.
 - Improve the way translations currently work to be compatible with https://developer.chrome.com/extensions/i18n
 - Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional) and make LOG_TYPE keys for extension-error-debug and extension-error-info and undefined in order to allow leaving off type and datetime more often
 - After saving AC API credentials, try a sample request to see if it succeeds or fails to determine if the credentials worked or not.
-- Clean up code
+- Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
 - Clean up the permissions in manifest.json
 - Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites
 - Take screenshots/video, and embed in this README

@@ -42,9 +42,7 @@ var logTypes = {};
 var debug = false;
 
 var showMessage = (function() {
-    // TODO this works because we load the script after the container element.
-    // Move it somewhere where that's not a risk.
-    // But that requires moving basically the whole script inside onLoad.
+    // This works because we load the script after the container element.
     var container = document.getElementById('content'),
         messageDate = new Date(),
         elemCount = 0,
@@ -109,6 +107,7 @@ function logIfError(message) {
         showMessage(null, 'debug', t(message, {
             error: chrome.runtime.lastError,
         }), 'extension-error');
+        return true;
     }
 }
 
@@ -269,7 +268,7 @@ window.addEventListener('load', function() {
             }
             if (site && typeof site === 'object') {
                 if (typeof site[envName] === 'undefined') {
-                    site[envName] = {domains: [], lastUpdated: now};
+                    site[envName] = {lastUpdated: now};
                 }
                 else {
                     site[envName].lastUpdated = now;
@@ -331,7 +330,7 @@ window.addEventListener('load', function() {
             'acquia-logstream.sitename': '',
             'acquia-logstream.environment': '',
             'acquia-logstream.debug': debug,
-            // {SITENAME: {ENVIRONMENT: {domains: ['hostname.com'], lastUpdated: lastUpdatedTimestamp}, lastUpdated: lastUpdatedTimestamp}}
+            // {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
             'acquia-logstream.sitelist': JSON.stringify({}),
         },
         function(items) {
@@ -347,14 +346,12 @@ window.addEventListener('load', function() {
             document.getElementById('show-debug').checked = debug;
 
             var cloud = new CloudAPI(user, pass),
-                sitenameElement = document.getElementById('sitename'),
-                environmentElement = document.getElementById('environment'),
                 sitelist = JSON.parse(items['acquia-logstream.sitelist']),
                 lastSite;
 
             // Update the environment list when the site changes.
-            sitenameElement.addEventListener('change', function() {
-                var sitename = sitenameElement.value;
+            document.getElementById('sitename').addEventListener('change', function() {
+                var sitename = this.value;
                 if (sitename === lastSite || !sitename) {
                     return;
                 }
@@ -370,8 +367,8 @@ window.addEventListener('load', function() {
             document.getElementById('connect').addEventListener('click', function(event) {
                 event.preventDefault();
                 if (typeof ws === 'undefined' || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
-                    var site = sitenameElement.value,
-                        env  = environmentElement.value,
+                    var site = document.getElementById('sitename').value,
+                        env  = document.getElementById('environment').value,
                         connectButton = this;
 
                     if (!site) {
@@ -411,15 +408,52 @@ window.addEventListener('load', function() {
     );
 
     // Save the most recent sitename.
-    document.getElementById('sitename').addEventListener('blur', function() {
+    document.getElementById('sitename').addEventListener('change', function() {
         chrome.storage.local.set({'acquia-logstream.sitename': this.value});
     });
 
     // Save the most recent environment.
-    document.getElementById('environment').addEventListener('blur', function() {
-        chrome.storage.local.set({'acquia-logstream.environment': this.value});
-        // TODO cache the list of domains for this environment so we can try to set sitename and environment automatically.
-        // cloud.request('sites/$SITENAME/envs/$ENV/domains') // returns a JSON array of objects where the "name" property contains a hostname
+    document.getElementById('environment').addEventListener('change', function() {
+        var sitename = document.getElementById('sitename').value,
+            envName = this.value;
+        if (!sitename || !envName) {
+            return;
+        }
+        chrome.storage.local.set({'acquia-logstream.environment': envName});
+        // Cache the list of domains for this environment.
+        chrome.storage.local.get({
+                'acquia-logstream.username': '',
+                'acquia-logstream.password': '',
+                'acquia-logstream.domains': JSON.stringify({}),
+            },
+            function(items) {
+                if (logIfError('Saving the association between a domain and its sitename and environment failed with the error: %error')) {
+                    return;
+                }
+                var user = items['acquia-logstream.username'],
+                    pass = items['acquia-logstream.password'],
+                    domains = JSON.parse(items['acquia-logstream.domains']),
+                    cloud = new CloudAPI(user, pass);
+                cloud.request(
+                    'sites/' + sitename + '/envs/' + envName + '/domains',
+                    function(results) {
+                        for (var i = 0, l = results.length; i < l; i++) {
+                            domains[results[i].name] = {
+                                sitename: sitename,
+                                environment: envName,
+                            };
+                        }
+                        chrome.storage.local.set({'acquia-logstream.domains': JSON.stringify(domains)});
+                    },
+                    function(xhr) {
+                        showMessage(null, 'debug', t('Retrieving domains failed with status %status: %response', {
+                            status: xhr.statusText,
+                            response: xhr.responseText,
+                        }), 'extension-error');
+                    }
+                );
+            }
+        );
     });
 
     // Change whether debug messages are shown when the checkbox value changes.
@@ -439,38 +473,28 @@ window.addEventListener('load', function() {
     });
 
     // Check to see if the current domain is associated with a cached sitename and environment, and if so, automatically pick them.
-    // Wrapped in setTimeout() so it is non-blocking.
-    // TODO: extract domains from the sitelist object and store them separately as {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
-    setTimeout(function() {
-        chrome.storage.local.get({
-                'acquia-logstream.sitelist': JSON.stringify({}),
-            },
-            function(items) {
-                logIfError('Checking if the current page has a cached association with a sitename and environment failed with the error: %error');
-                var sitelist = JSON.parse(items['acquia-logstream.sitelist']);
-                chrome.devtools.inspectedWindow.eval("window.location.hostname", function(domain, error) {
-                    if (error || !domain) {
-                        showMessage(null, 'debug', t('Unable to get current hostname: %error', {error: error}), 'extension-error');
-                    }
-                    else {
-                        for (var site in sitelist) {
-                            if (sitelist.hasOwnProperty(site) && typeof sitelist[site] === 'object') {
-                                for (var env in sitelist[site]) {
-                                    if (sitelist[site].hasOwnProperty(env)
-                                            && typeof sitelist[site][env] === 'object'
-                                            && sitelist[site][env].domains.indexOf(domain) !== -1) {
-                                        sitenameElement.value = site;
-                                        environmentElement.value = env;
-                                        return;
-                                    }
-                                }
-                            }
+    chrome.storage.local.get({
+            'acquia-logstream.domains': JSON.stringify({}), // {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+        },
+        function(items) {
+            logIfError('Checking if the current website has a cached association with a sitename and environment failed with the error: %error');
+            chrome.devtools.inspectedWindow.eval("window.location.hostname", function(hostname, error) {
+                if (error || !hostname) {
+                    showMessage(null, 'debug', t('Unable to get current hostname: %error', {error: error}), 'extension-error');
+                }
+                else {
+                    var domains = JSON.parse(items['acquia-logstream.domains']);
+                    for (var domain in domains) {
+                        if (domains.hasOwnProperty(domain) && domain === hostname) {
+                            document.getElementById('sitename').value = domains[domain].sitename;
+                            document.getElementById('environment').value = domains[domain].environment;
+                            return;
                         }
                     }
-                });
-            }
-        );
-    }, 0);
+                }
+            });
+        }
+    );
 
     // Expand log message when clicked
     document.getElementById('content').addEventListener('click', function(event) {
