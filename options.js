@@ -22,12 +22,12 @@ window.addEventListener('load', function() {
     );
 
     // Save the most recent username.
-    document.getElementById('username').addEventListener('change', function() {
+    document.getElementById('username').addEventListener('blur', function() {
         chrome.storage.local.set({'acquia-logstream.username': this.value});
     });
 
     // Save the most recent password.
-    document.getElementById('password').addEventListener('change', function() {
+    document.getElementById('password').addEventListener('blur', function() {
         chrome.storage.local.set({'acquia-logstream.password': this.value});
     });
 });

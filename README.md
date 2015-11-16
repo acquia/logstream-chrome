@@ -49,12 +49,17 @@ website and watch as the logs are generated in real time.
 
 ## TODO
 
-- Try to automatically detect the sitename / environment from API calls and page headers (e.g. X-AH-Environment) and cache the result if we get a match
-    curl -s -u user:pass https://cloudapi.acquia.com/v1/sites/realm:mysite/envs/prod/domains.json # returns a JSON array of objects where the "name" property contains a hostname
+- TODOs
 - Add an option to only show logs caused by requests the current browser made (on pages that can stream logs) using X-Request-ID
     Make background.js send X-Request-ID correctly
     Filter to logs with request_id="<id>" for IDs that we sent
-- TODOs
+- Keep a default set of log types to populate the "Show log types" form element initially
+- Sort sitenames and environments alphabetically, with dev/stage/prod at the top
+- Segment the sitename selector by stage
+- See if the way we make API calls can be modified to not leak the user's Cloud creds in the URL
+- Improve the way translations currently work to be compatible with https://developer.chrome.com/extensions/i18n
+- Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional) and make LOG_TYPE keys for extension-error-debug and extension-error-info and undefined in order to allow leaving off type and datetime more often
+- After saving AC API credentials, try a sample request to see if it succeeds or fails to determine if the credentials worked or not.
 - Clean up code
 - Clean up the permissions in manifest.json
 - Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites

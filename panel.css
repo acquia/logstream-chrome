@@ -108,6 +108,10 @@ label[for="logtypes"] {
     width: 120px;
 }
 
+.stacked select {
+    max-width: 150px;
+}
+
 #connect {
     font-size: 21px;
     font-weight: bold;
@@ -117,10 +121,6 @@ label[for="logtypes"] {
 .message {
     border-bottom: 1px solid #999999;
     padding: 2px;
-}
-
-.message:last-child {
-    border-bottom-width: 0;
 }
 
 .message span {
@@ -135,7 +135,7 @@ label[for="logtypes"] {
 
 .datetime {
     margin-right: 10px;
-    width: 180px;
+    width: 250px;
 }
 
 .type {
