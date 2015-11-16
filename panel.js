@@ -49,6 +49,9 @@ var debug = false;
 var showMessage = (function() {
     var elemCount = 0;
     return function(datetime, type, s) {
+        if (!debug && type === 'debug') {
+            return;
+        }
         var el = document.createElement('div'),
             dt = document.createElement('span'),
             ty = document.createElement('span'),
@@ -110,13 +113,93 @@ window.addEventListener('load', function() {
         event.preventDefault();
     });
 
+    // Populates the options of the sitename select list.
+    // If the `sitelist` parameter is not set, the `sites` list is from the cache.
+    function renderSitenameList(sites, sitelist, lastSitename) {
+        if (!sites.length && sitelist) {
+            return showMessage(null, 'info', t(
+                'You do not have access to any sites on Acquia Cloud. ' +
+                'To stream logs, create a site at https://insight.acquia.com/subscriptions/add ' +
+                'or ask an administrator for a site you work on to give you access.'
+            ), 'extension-error');
+        }
+        // Add the list of available sites as <option>s.
+        // TODO: For performance, if sitelist, diff the cache against the new sites, only create the missing new ones, and delete any removed ones.
+        var sitenameElement = document.getElementById('sitename'),
+            siteOptions = document.createDocumentFragment(),
+            lastSelection = '',
+            now = Date.now(),
+            op;
+        for (var i = 0, l = sites.length; i < l; i++) {
+            var sitename = sites[i];
+            // Environment names are all lower case by convention,
+            // so there shouldn't be any environments named lastUpdated.
+            if (sitename === 'lastUpdated') {
+                continue;
+            }
+            op = document.createElement('option');
+            op.value = sitename;
+            op.textContent = sitename;
+            siteOptions.appendChild(op);
+            if (sitename === lastSitename) {
+                lastSelection = sitename;
+            }
+            if (sitelist) {
+                if (typeof sitelist[sitename] === 'undefined') {
+                    sitelist[sitename] = {lastUpdated: now};
+                }
+                else {
+                    sitelist[sitename].lastUpdated = now;
+                }
+            }
+        }
+        sitenameElement.innerHTML = '';
+        sitenameElement.appendChild(siteOptions);
+        sitenameElement.value = lastSelection || (sites.length ? sitenameElement.options[0].value : lastSitename);
+        sitenameElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
+        if (sitelist) {
+            // Remove cached sites that aren't in the newly retrieved list.
+            for (var site in sitelist) {
+                if (sitelist.hasOwnProperty(site) && typeof sitelist[site] === 'object' && sitelist[site].lastUpdated !== now) {
+                    delete sitelist[site];
+                }
+            }
+            // Save the updated site values to the cache.
+            chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
+        }
+    }
+
+    // Populate the options in the sitename select element.
+    function resetSitenameList(cloud, sitelist, items) {
+        // Load from cache for speed.
+        renderSitenameList(Object.keys(sitelist), null, items['acquia-logstream.sitename']);
+        // Refresh from Cloud.
+        showMessage(null, 'debug', t('Refreshing site list...'));
+        cloud.request(
+            'sites',
+            function(sites) {
+                renderSitenameList(sites, sitelist, items['acquia-logstream.sitename']);
+                showMessage(null, 'debug', t('Site list refreshed successfully.'));
+            },
+            function(xhr) {
+                document.getElementById('sitename').value = items['acquia-logstream.sitename'];
+                document.getElementById('environment').value = items['acquia-logstream.environment'] || 'prod';
+                showMessage(null, 'info', t('Refreshing the site list failed with status %status: %response', {
+                    status: xhr.statusText,
+                    response: xhr.responseText,
+                }), 'extension-error');
+            }
+        );
+    }
+
     chrome.storage.local.get({
             'acquia-logstream.username': '',
             'acquia-logstream.password': '',
             'acquia-logstream.sitename': '',
             'acquia-logstream.environment': '',
             'acquia-logstream.debug': debug,
-            'acquia-logstream.sitelist': JSON.stringify({}), // {SITENAME: {ENVIRONMENT: {domains: [''], lastUpdated: lastUpdatedTimestamp}, lastUpdated: lastUpdatedTimestamp}}
+            // {SITENAME: {ENVIRONMENT: {domains: ['hostname.com'], lastUpdated: lastUpdatedTimestamp}, lastUpdated: lastUpdatedTimestamp}}
+            'acquia-logstream.sitelist': JSON.stringify({}),
         },
         function(items) {
             if (typeof chrome.runtime.lastError === 'string') {
@@ -138,12 +221,18 @@ window.addEventListener('load', function() {
             var cloud = new CloudAPI(user, pass),
                 sitenameElement = document.getElementById('sitename'),
                 environmentElement = document.getElementById('environment'),
-                sitelist = JSON.parse(items['acquia-logstream.sitelist']);
+                sitelist = JSON.parse(items['acquia-logstream.sitelist'])
+                lastSite;
 
             // Update the environment list when the site changes.
             sitenameElement.addEventListener('change', function() {
                 var sitenameValue = sitenameElement.value;
+                if (sitenameValue === lastSite) {
+                    return; // Avoid repeating the request if Chrome fires the event multiple times
+                }
+                lastSite = sitenameValue;
                 // TODO: Load environments from cache if possible before making the request, and save them to cache after retrieving them.
+                showMessage(null, 'debug', t('Retrieving environments for site "%site"', {site: sitenameValue}));
                 cloud.request(
                     'sites/' + sitenameValue + '/envs',
                     function(envs) {
@@ -157,8 +246,8 @@ window.addEventListener('load', function() {
                         var envOptions = document.createDocumentFragment(),
                             prod = '',
                             lastSelection = '',
-                            op,
-                            cacheIsDirty = false;
+                            now = Date.now(),
+                            op;
                         for (var i = 0, l = envs.length; i < l; i++) {
                             var envName = envs[i].name;
                             op = document.createElement('option');
@@ -172,35 +261,28 @@ window.addEventListener('load', function() {
                             if (envName === items['acquia-logstream.environment']) {
                                 lastSelection = envName;
                             }
-                            // TODO fix this. Just set environments to the returned environments list and then add details back in? Otherwise make sure we remove stale records.
-                            try {
-                                if (sitelist[sitenameValue].environments.indexOf(envName) === -1) {
-                                    sitelist[site].environments.push(envName);
-                                    cacheIsDirty = true;
+                            if (typeof sitelist[sitenameValue] === 'object') {
+                                if (typeof sitelist[sitenameValue][envName] === 'undefined') {
+                                    sitelist[sitenameValue][envName] = {domains: [], lastUpdated: now};
+                                }
+                                else {
+                                    sitelist[sitenameValue][envName].lastUpdated = now;
                                 }
                             }
-                            catch(e) {
-                                showMessage(null, 'debug', t('Unable to cache the association between the site "%site" and the environment "%environment": %err', {
-                                    site: sitenameValue,
-                                    environment: envName,
-                                    err: e,
-                                }), 'extension-error');
-                            }
                         }
+                        environmentElement.innerHTML = '';
                         environmentElement.appendChild(envOptions);
-                        environmentElement.value = lastSelection || prod || (envs.length ? sitenameElement.options[0].value : items['acquia-logstream.environment']);
-                        if (cacheIsDirty) {
-                            chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
+                        environmentElement.value = lastSelection || prod
+                                                || (envs.length ? sitenameElement.options[0].value : items['acquia-logstream.environment']);
+                        // Remove cached environments that aren't in the newly retrieved list.
+                        for (var env in sitelist[sitenameValue]) {
+                            if (sitelist[sitenameValue].hasOwnProperty(env)
+                                    && typeof sitelist[sitenameValue][env] === 'object'
+                                    && sitelist[sitenameValue][env].lastUpdated !== now) {
+                                delete sitelist[sitenameValue][env];
+                            }
                         }
-                        // Now that the sitenames and environments are populated, try to set them to the domain with which they're associated.
-                        chrome.devtools.inspectedWindow.eval("window.location.hostname", function(domain, error) {
-                            if (error) {
-                                showMessage(null, 'debug', t('Unable to get current hostname: %error', {error: error}), 'extension-error');
-                            }
-                            else {
-                                // TODO search the sitelist object for a domain that matches the hostname and set sitenameElement and environmentElement as appropriate
-                            }
-                        });
+                        chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
                     },
                     function(xhr) {
                         environmentElement.value = items['acquia-logstream.environment'] || 'prod';
@@ -212,52 +294,7 @@ window.addEventListener('load', function() {
                 );
             });
 
-            // TODO Load sites from cache if possible before making the request.
-            cloud.request(
-                'sites',
-                function(sites) {
-                    if (!sites.length) {
-                        return showMessage(null, 'info', t(
-                            'You do not have access to any sites on Acquia Cloud. To stream logs, create a site at https://insight.acquia.com/subscriptions/add or ask an administrator for a site you work on to give you access.'
-                        ), 'extension-error');
-                    }
-                    // Add the list of available sites as <option>s.
-                    var siteOptions = document.createDocumentFragment(),
-                        op,
-                        now = Date.now();
-                    for (var i = 0, l = sites.length; i < l; i++) {
-                        var sitename = sites[i];
-                        op = document.createElement('option');
-                        op.value = sitename;
-                        op.textContent = sitename;
-                        siteOptions.appendChild(op);
-                        if (typeof sitelist[sitename] === 'undefined') {
-                            sitelist[sitename] = {domains:[], environments: {}, lastUpdated: now}; // TODO fix this
-                        }
-                        else {
-                            sitelist[sitename].lastUpdated = now;
-                        }
-                    }
-                    sitenameElement.appendChild(siteOptions);
-                    sitenameElement.value = items['acquia-logstream.sitename'] || sitenameElement.options[0].value;
-                    sitenameElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
-                    // Remove cached sites that aren't in the newly retrieved list.
-                    for (var site in sitelist) {
-                        if (sitelist.hasOwnProperty(site) && sitelist[site].lastUpdated !== now) {
-                            delete sitelist[site];
-                        }
-                    }
-                    // Save the updated site values to the cache.
-                    chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
-                },
-                function(xhr) {
-                    sitenameElement.value = items['acquia-logstream.sitename'];
-                    environmentElement.value = items['acquia-logstream.environment'] || 'prod';
-                    showMessage(null, 'info', t(
-                        'Retrieving sites failed.'
-                    ), 'extension-error');
-                }
-            );
+            resetSitenameList(cloud, sitelist, items);
 
             // (Dis)connect when the button is clicked.
             var ws;
@@ -332,6 +369,32 @@ window.addEventListener('load', function() {
         }
     });
 
+    // Check to see if the current domain is associated with a cached sitename and environment, and if so, automatically pick them.
+    // Wrapped in setTimeout() so it is non-blocking.
+    // TODO: extract domains from the sitelist object and store them separately as {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+    setTimeout(function() {
+        chrome.devtools.inspectedWindow.eval("window.location.hostname", function(domain, error) {
+            if (error) {
+                showMessage(null, 'debug', t('Unable to get current hostname: %error', {error: error}), 'extension-error');
+            }
+            else {
+                for (var site in sitelist) {
+                    if (sitelist.hasOwnProperty(site) && typeof sitelist[site] === 'object') {
+                        for (var env in sitelist[site]) {
+                            if (sitelist[site].hasOwnProperty(env)
+                                    && typeof sitelist[site][env] === 'object'
+                                    && sitelist[site][env].domains.indexOf(domain) !== -1) {
+                                sitenameElement.value = site;
+                                environmentElement.value = env;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }, 0);
+
     // Expand log message when clicked
     container.addEventListener('click', function(event) {
         if (event.target.classList.contains('message')) {
@@ -370,9 +433,7 @@ function setupWebSocket(connectionInfo) {
     var ws = new WebSocket(connectionInfo.url);
 
     ws.onopen = function() {
-        if (debug) {
-            showMessage(null, 'debug', connectionInfo.msg, 'sent');
-        }
+        showMessage(null, 'debug', connectionInfo.msg, 'sent');
         showMessage(null, 'info', t('Connected successfully.'));
         ws.send(connectionInfo.msg);
     };
@@ -384,9 +445,7 @@ function setupWebSocket(connectionInfo) {
                 showMessage(null, 'debug', event.data, 'received');
             }
             else if (data.cmd === 'available') {
-                if (debug) {
-                    showMessage(null, 'debug', event.data, 'received');
-                }
+                showMessage(null, 'debug', event.data, 'received');
                 if (typeof logTypes[data.type] === 'undefined') {
                     logTypes[data.type] = {
                         enabled: true,
@@ -406,9 +465,7 @@ function setupWebSocket(connectionInfo) {
                         type: data.type,
                         server: data.server,
                     });
-                    if (debug) {
-                        showMessage(null, 'debug', msg, 'sent');
-                    }
+                    showMessage(null, 'debug', msg, 'sent');
                     ws.send(msg);
                 }
             }
@@ -433,9 +490,7 @@ function setupWebSocket(connectionInfo) {
     };
 
     ws.onclose = function() {
-        if (debug) {
-            showMessage(null, 'debug', t('Connection closed'));
-        }
+        showMessage(null, 'debug', t('Connection closed'));
         document.getElementById('connect').value = t('Reconnect');
     };
 

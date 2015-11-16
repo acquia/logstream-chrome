@@ -49,9 +49,6 @@ website and watch as the logs are generated in real time.
 
 ## TODO
 
-- Convert sitename and environment fields to a select list of the sites/envs the user can access, and cache the lists to avoid startup slowness
-    curl -u user:pass https://cloudapi.acquia.com/v1/sites.json # returns a JSON array of strings formatted as "realm:sitename"
-    curl -u user:pass https://cloudapi.acquia.com/v1/sites/REALM:SITENAME/envs.json # returns a JSON array of objects where the "name" property has the env name
 - Try to automatically detect the sitename / environment from API calls and page headers (e.g. X-AH-Environment) and cache the result if we get a match
     curl -s -u user:pass https://cloudapi.acquia.com/v1/sites/realm:mysite/envs/prod/domains.json # returns a JSON array of objects where the "name" property contains a hostname
 - Add an option to only show logs caused by requests the current browser made (on pages that can stream logs) using X-Request-ID
