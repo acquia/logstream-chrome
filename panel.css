@@ -76,6 +76,7 @@ p.error {
     display: table;
     margin: 0 auto;
     padding: 10px 0;
+    text-align: center;
 }
 
 fieldset {
@@ -83,6 +84,7 @@ fieldset {
     display: inline-block;
     margin: 0;
     padding: 0 20px;
+    text-align: start;
     vertical-align: middle;
 }
 
@@ -94,16 +96,12 @@ label[for="logtypes"] {
     font-weight: bold;
 }
 
-.stacked {
-    width: 280px;
-}
-
 .stacked label {
-    display: inline-block;
+    display: block;
     padding: 2.5px 0;
 }
 
-.stacked .label {
+.align-label-column {
     display: inline-block;
     width: 120px;
 }
@@ -115,6 +113,7 @@ label[for="logtypes"] {
 #connect {
     font-size: 21px;
     font-weight: bold;
+    margin: 20px 0;
     padding: 3px 9px;
 }
 

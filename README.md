@@ -48,17 +48,17 @@ Click the "Connect" button to start streaming logs. You can browse around your
 website and watch as the logs are generated in real time.
 
 ## TODO
-
-- Add an option to only show logs caused by requests the current browser made (on pages that can stream logs) using X-Request-ID
-    Make background.js send X-Request-ID correctly
-    Filter to logs with request_id="<id>" for IDs that we sent
 - Keep a default set of log types to populate the "Show log types" form element initially
 - Sort sitenames and environments alphabetically, with dev/stage/prod at the top
 - Segment the sitename selector by stage
 - See if the way we make API calls can be modified to not leak the user's Cloud creds in the URL
 - Improve the way translations currently work to be compatible with https://developer.chrome.com/extensions/i18n
+    use http://tumble.jeremyhubert.com/post/7076881720/translating-html-in-a-chrome-extension for HTML
 - Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional) and make LOG_TYPE keys for extension-error-debug and extension-error-info and undefined in order to allow leaving off type and datetime more often
 - After saving AC API credentials, try a sample request to see if it succeeds or fails to determine if the credentials worked or not.
+- Make it more clear what happened if CORS fails.
+- Allow only showing logs referencing the current page
+- Allow filtering logs using regex
 - Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
 - Clean up the permissions in manifest.json
 - Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites

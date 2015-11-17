@@ -18,11 +18,11 @@
             </fieldset>
             <fieldset class="stacked">
                 <label for="sitename">
-                    <span class="label">Sitename:</span>
+                    <span class="label align-label-column">Sitename:</span>
                     <select id="sitename"></select>
                 </label>
                 <label for="environment">
-                    <span class="label">Environment:</span>
+                    <span class="label align-label-column">Environment:</span>
                     <select id="environment"></select>
                 </label>
             </fieldset>
@@ -33,7 +33,11 @@
                 <select id="logtypes" multiple="true" size="3">
                 </select>
             </fieldset>
-            <fieldset>
+            <fieldset class="stacked">
+                <label for="show-only-me">
+                    <input id="show-only-me" type="checkbox" value="" checked />
+                    <span class="label">Show only logs I generate</span>
+                </label>
                 <label for="show-debug">
                     <input id="show-debug" type="checkbox" value="" />
                     <span class="label">Show debug messages</span>
