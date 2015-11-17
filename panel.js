@@ -41,6 +41,11 @@ var logTypes = {};
 // Whether to show debug messages
 var debug = false;
 
+// If we can detect that the current hostname matched a Cloud site, these will
+// contain the sitename and environment of that site.
+var domainMatchedSitename = '',
+    domainMatchedEnvironment = '';
+
 var showMessage = (function() {
     // This works because we load the script after the container element.
     var container = document.getElementById('content'),
@@ -159,6 +164,7 @@ window.addEventListener('load', function() {
         // Add the list of available sites as <option>s.
         var sitenameElement = document.getElementById('sitename'),
             siteOptions = document.createDocumentFragment(),
+            domainMatch = '',
             lastSelection = '',
             now = Date.now(),
             op;
@@ -176,6 +182,9 @@ window.addEventListener('load', function() {
             if (sitename === lastSitename) {
                 lastSelection = sitename;
             }
+            if (sitename === domainMatchedSitename) {
+                domainMatch = sitename;
+            }
             if (sitelist && typeof sitelist === 'object') {
                 if (typeof sitelist[sitename] === 'undefined') {
                     sitelist[sitename] = {lastUpdated: now};
@@ -187,7 +196,7 @@ window.addEventListener('load', function() {
         }
         sitenameElement.innerHTML = '';
         sitenameElement.appendChild(siteOptions);
-        sitenameElement.value = lastSelection || (sites.length ? sitenameElement.options[0].value : lastSitename);
+        sitenameElement.value = domainMatch || lastSelection || sitenameElement.options[0].value;
         sitenameElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
         if (sitelist) {
             // Remove cached sites that aren't in the newly retrieved list.
@@ -242,6 +251,7 @@ window.addEventListener('load', function() {
             envOptions = document.createDocumentFragment(),
             prod = '',
             dev = '',
+            domainMatch = '',
             lastSelection = '',
             now = Date.now(),
             op;
@@ -266,6 +276,9 @@ window.addEventListener('load', function() {
             if (envName === lastEnvName) {
                 lastSelection = envName;
             }
+            if (envName === domainMatchedEnvironment) {
+                domainMatch = envName;
+            }
             if (site && typeof site === 'object') {
                 if (typeof site[envName] === 'undefined') {
                     site[envName] = {lastUpdated: now};
@@ -277,7 +290,7 @@ window.addEventListener('load', function() {
         }
         environmentElement.innerHTML = '';
         environmentElement.appendChild(envOptions);
-        environmentElement.value = lastSelection || prod || dev || (envs.length ? environmentElement.options[0].value : lastEnvName);
+        environmentElement.value = domainMatch || lastSelection || prod || dev || environmentElement.options[0].value;
         environmentElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
         if (site) {
             // Remove cached environments that aren't in the newly retrieved list.
@@ -486,8 +499,8 @@ window.addEventListener('load', function() {
                     var domains = JSON.parse(items['acquia-logstream.domains']);
                     for (var domain in domains) {
                         if (domains.hasOwnProperty(domain) && domain === hostname) {
-                            document.getElementById('sitename').value = domains[domain].sitename;
-                            document.getElementById('environment').value = domains[domain].environment;
+                            domainMatchedSitename = domains[domain].sitename;
+                            domainMatchedEnvironment = domains[domain].environment;
                             return;
                         }
                     }
