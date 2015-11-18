@@ -17,17 +17,18 @@ for development or testing purposes, you can load this extension's code in
 
 Third, you need to input your login credentials to Acquia Cloud in the
 extension's settings. Note that these will be stored unencrypted on your local
-machine, so be sure to remove them when you're done if you are uncomfortable
-with that.
+machine (as are all passwords that Chrome remembers on your behalf) so be sure
+to remove them when you're done if you are uncomfortable with that.
 
 Now you need to run Chrome with CORS disabled so that your browser can make API
 requests to Acquia Cloud from your own websites. Close Chrome if you already
-have it open, and restart Chrome when you're done before using it for anything
-else in order to preserve your security. To start Chrome without CORS, run the
-appropriate command below in a terminal or command prompt.
+have it open. (When you're done using this extension, restart Chrome normally
+before using it for anything else in order to preserve your security.) To start
+Chrome without CORS, run the appropriate command below in a terminal or command
+prompt:
 
 - On Linux: `google-chrome --disable-web-security`
-- On Mac: `open -a Google\ Chrome --args --disable-web-security`
+- On Mac: usually `open -a Google\ Chrome --args --disable-web-security`
 - On Windows: you need to directly reference the Chrome executable, which can
   be installed in different places. A common example is
   `"%USERPROFILE%\AppData\Local\Google\Chrome\Application\chrome.exe" --disable-web-security`.
@@ -40,28 +41,27 @@ Chrome Developer Tools (press `Ctrl+Shift+J` or navigate to
 `Hamburger > More tools > Developer tools`) and switch to the "Stream logs"
 panel.
 
-Finally, you need to fill in the sitename and environment for the site you are
-investigating. These values will persist so that you don't have to find them
-every time you use the tool.
-
-Click the "Connect" button to start streaming logs. You can browse around your
-website and watch as the logs are generated in real time.
+Finally, select the sitename and environment for the site you are
+investigating, then click the "Connect" button to start streaming logs. You can
+browse around your website and watch as the logs are generated in real time.
 
 ## TODO
-- Fix the time is being shown in the wrong timezone, probably because it's being parsed in UTC when it's actually in EST
-- Sort sitenames and environments alphabetically, with dev/stage/prod at the top
-- See if the way we make API calls can be modified to not leak the user's Cloud creds in the URL
+
+### High priority
+- It seems like cross-origin requests can be made in background.js. Try moving them there and see if we can get rid of the "start chrome in no-CORS mode" requirement. If that doesn't work, make it more clear what happened if CORS fails, and write a module for Drupal 7 and 8 that allows use of this extension without disabling CORS in Chrome. Update the extension code to use this if it's available and update the README to reflect this.
 - Improve the way translations currently work to be compatible with https://developer.chrome.com/extensions/i18n
     use http://tumble.jeremyhubert.com/post/7076881720/translating-html-in-a-chrome-extension for HTML
-- Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional) and make LOG_TYPE keys for extension-error-debug and extension-error-info and undefined in order to allow leaving off type and datetime more often
+
+### Medium priority
 - After saving AC API credentials, try a sample request to see if it succeeds or fails to determine if the credentials worked or not.
-- Make it more clear what happened if CORS fails.
-- Segment the sitename selector by stage using optgroups
-- Allow filtering logs using regex
-- Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
-- Clean up the permissions in manifest.json
-- Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites
+- Use ADL styles: https://wiki.acquia.com/display/UX/ADL+Style+guidelines
+- Allow filtering streamed logs using regex. (Should this also filter logs that have already been rendered?) This seems to be safe (the main attack vector is a DoS which isn't a big deal since why would a user do that to themselves?) but needs error handling since regexes will often fail if executed while being written (or if written poorly).
 - Take screenshots/video, and embed in this README
 - Add linting support
-- Write a module for Drupal 7 and 8 that allows use of this extension without disabling CORS in Chrome. Update the extension code to use this if it's available and update the README to reflect this.
-- Publish the extension
+- Publish the extension and update the README to point to the extension on the Chrome Web Store
+
+### Low priority
+- Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional) and make LOG_TYPE keys for extension-error-debug and extension-error-info and undefined in order to allow leaving off type and datetime more often
+- Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
+- Clean up the permissions in manifest.json
+- Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites. There don't seem to be any vanilla JS frameworks for this though.

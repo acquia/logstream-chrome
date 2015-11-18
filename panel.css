@@ -107,7 +107,7 @@ label[for="logtypes"] {
 }
 
 .stacked select {
-    max-width: 150px;
+    width: 150px;
 }
 
 #connect {

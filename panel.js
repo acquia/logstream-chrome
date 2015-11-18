@@ -115,8 +115,13 @@ var showMessage = (function() {
         el.classList.add.apply(el.classList, args);
         dt.classList.add('datetime');
         ty.classList.add('type');
-        messageDate.setTime(datetime ? Date.parse(datetime) : Date.now());
-        dt.textContent = formatDate(messageDate);
+        try {
+            messageDate.setTime(datetime ? Date.parse(datetime) : Date.now());
+            dt.textContent = formatDate(messageDate);
+        }
+        catch(e) {
+            dt.textContent = datetime;
+        }
         ty.textContent = logTypes[type+''].name;
         tx.textContent = s;
         el.appendChild(dt);
@@ -160,7 +165,7 @@ function CloudAPI(user, pass) {
 CloudAPI.prototype.request = function(path, success, failure) {
     var url = 'https://cloudapi.acquia.com/v1/' + path + '.json',
         xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true, this.user, this.pass);
+    xhr.open('GET', url, true);
     xhr.onreadystatechange = function() {
         if (xhr.readyState === xhr.DONE) {
             if (xhr.status === 200) {
@@ -205,6 +210,7 @@ window.addEventListener('load', function() {
             lastSelection = '',
             now = Date.now(),
             op;
+        sites.sort();
         for (var i = 0, l = sites.length; i < l; i++) {
             var sitename = sites[i];
             // Sitenames are all lower case by convention,
@@ -291,7 +297,16 @@ window.addEventListener('load', function() {
             domainMatch = '',
             lastSelection = '',
             now = Date.now(),
-            op;
+            op,
+            envOrder = ['dev', 'test', 'prod', 'live01', 'ra'];
+        envs.sort(function(a, b) {
+            if (a === b) return 0;
+            for (var i = 0; i < envOrder.length; i++) {
+                if (a === envOrder[i]) return -1;
+                else if (b === envOrder[i]) return 1;
+            }
+            return a.localeCompare(b);
+        });
         for (var i = 0, l = envs.length; i < l; i++) {
             var envName = envs[i];
             // Environment names are all lower case by convention,
@@ -655,6 +670,11 @@ function setupWebSocket(connectionInfo) {
             }
             else if (data.cmd === 'line') {
                 if (!(onlyMe instanceof RegExp) || onlyMe.test(data.text)) {
+                    // At the time of writing, Cloud always streams UTC times,
+                    // but does not make the timezone explicit in the disp_time string.
+                    // showMessage() will assume local time if the timezone is not explicit,
+                    // so we need to add a UTC timezone indicator.
+                    data.disp_time += ' +0000';
                     if (typeof data.http_status === 'undefined') {
                         showMessage(data.disp_time, data.log_type, data.text, 'log');
                     }
