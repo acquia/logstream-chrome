@@ -20,26 +20,52 @@ function t(s, replacements) {
     });
 }
 
-var LOG_NAMES = {
-    'apache-error':    t('Apache error'),
-    'apache-request':  t('Apache request'),
-    'bal-request':     t('Balancer request'),
-    'drupal-request':  t('Drupal request'),
-    'drupal-watchdog': t('Drupal watchdog'),
-    'mysql-slow':      t('MySQL slow query'),
-    'php-error':       t('PHP error'),
-    'varnish-request': t('Varnish request'),
-    'null':            t('debug'),
-    'debug':           t('debug'),
-    'info':            t('info'),
+/**
+ * Describes a type of log entry.
+ *
+ * @param {String/Object} options
+ *   If a string is passed, that becomes the name of the log type. If an object
+ *   is passed, the following properties will be used to set properties of the
+ *   log type:
+ *   - `{Boolean} [allowToggling=true]`: Whether this log type will show up in
+ *     the list of log types in the UI so that it can be enabled and disabled.
+ *   - `{Boolean} [enabled=true]`: Whether logs of this type will be shown in
+ *     the stream or not by default.
+ *   - `{String} name`: The name of the log type.
+ */
+function LogType(options) {
+    if (typeof options === 'string') {
+        this.name = options;
+        options = {};
+    }
+    else {
+        this.name = options.name;
+    }
+    this.allowToggling = typeof options.allowToggling === 'undefined' ? true : options.allowToggling;
+    this.enabled = typeof options.enabled === 'undefined' ? true : options.enabled;
+}
+
+// Holds information about the available log types. These defaults are the ones
+// that we expect to be available. The list will be updated based on what the
+// servers advertise.
+var logTypes = {
+    'apache-error':    new LogType(t('Apache error')),
+    'apache-request':  new LogType(t('Apache request')),
+    'bal-request':     new LogType(t('Balancer request')),
+    'drupal-request':  new LogType(t('Drupal request')),
+    'drupal-watchdog': new LogType(t('Drupal watchdog')),
+    'mysql-slow':      new LogType(t('MySQL slow query')),
+    'php-error':       new LogType(t('PHP error')),
+    'varnish-request': new LogType(t('Varnish request')),
+    'debug':           new LogType({
+        enabled: false,
+        name: t('debug'),
+    }),
+    'info':            new LogType({
+        allowToggling: false,
+        name: t('info'),
+    }),
 };
-
-// Holds information about the available log types.
-var logTypes = {};
-
-
-// Whether to show debug messages
-var debug = false;
 
 // Whether to show only logs the current user generates.
 // If truthy, may hold a regex which identifies requests the user generated.
@@ -72,12 +98,12 @@ var showMessage = (function() {
      *   The time at which the message was generated. If falsy, this is
      *   generated as the current time.
      * @param {String} type
-     *   The type of message. Must match a key of `LOG_NAMES`.
+     *   The type of message. Must match a key of `logTypes`.
      * @param {String} s
      *   The message to show.
      */
     return function showMessage(datetime, type, s) {
-        if (!debug && type === 'debug') {
+        if (!logTypes[type].enabled) {
             return;
         }
         var el = document.createElement('div'),
@@ -91,7 +117,7 @@ var showMessage = (function() {
         ty.classList.add('type');
         messageDate.setTime(datetime ? Date.parse(datetime) : Date.now());
         dt.textContent = formatDate(messageDate);
-        ty.textContent = LOG_NAMES[type+''];
+        ty.textContent = logTypes[type+''].name;
         tx.textContent = s;
         el.appendChild(dt);
         el.appendChild(ty);
@@ -364,8 +390,8 @@ window.addEventListener('load', function() {
             'acquia-logstream.password': '',
             'acquia-logstream.sitename': '',
             'acquia-logstream.environment': '',
-            'acquia-logstream.debug': debug,
             'acquia-logstream.onlyme': onlyMe,
+            'acquia-logstream.logtypes': JSON.stringify(logTypes),
             // {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
             'acquia-logstream.sitelist': JSON.stringify({}),
         },
@@ -378,12 +404,24 @@ window.addEventListener('load', function() {
                 return document.getElementById('credentials-error').classList.remove('hidden');
             }
 
-            debug = items['acquia-logstream.debug'];
-            document.getElementById('show-debug').checked = debug;
-
             onlyMe = items['acquia-logstream.onlyme'];
             document.getElementById('show-only-me').checked = !!onlyMe;
             sendRequestHeaderStatus();
+
+            logTypes = JSON.parse(items['acquia-logstream.logtypes']);
+            var logOptions = document.createDocumentFragment();
+            for (var type in logTypes) {
+                if (logTypes.hasOwnProperty(type) && logTypes[type].allowToggling) {
+                    var op = document.createElement('option');
+                    if (logTypes[type].enabled) {
+                        op.setAttribute('selected', '');
+                    }
+                    op.value = type;
+                    op.textContent = logTypes[type].name;
+                    logOptions.appendChild(op);
+                }
+            }
+            document.getElementById('logtypes').appendChild(logOptions);
 
             var cloud = new CloudAPI(user, pass),
                 sitelist = JSON.parse(items['acquia-logstream.sitelist']),
@@ -496,12 +534,6 @@ window.addEventListener('load', function() {
         );
     });
 
-    // Change whether debug messages are shown when the checkbox value changes.
-    document.getElementById('show-debug').addEventListener('change', function() {
-        debug = this.checked;
-        chrome.storage.local.set({'acquia-logstream.debug': this.checked});
-    });
-
     // Change whether messages are limited to only the ones generated by the current user when the checkbox value changes.
     document.getElementById('show-only-me').addEventListener('change', function() {
         onlyMe = this.checked;
@@ -517,6 +549,7 @@ window.addEventListener('load', function() {
                 logTypes[o[i].value].enabled = o[i].selected;
             }
         }
+        chrome.storage.local.set({'acquia-logstream.logtypes': JSON.stringify(logTypes)});
     });
 
     // Check to see if the current domain is associated with a cached sitename and environment, and if so, automatically pick them.
@@ -585,7 +618,8 @@ window.addEventListener('load', function() {
 });
 
 function setupWebSocket(connectionInfo) {
-    var ws = new WebSocket(connectionInfo.url);
+    var ws = new WebSocket(connectionInfo.url),
+        logTypesElement = document.getElementById('logtypes');
 
     ws.onopen = function() {
         showMessage(null, 'debug', connectionInfo.msg, 'sent');
@@ -596,23 +630,18 @@ function setupWebSocket(connectionInfo) {
     ws.onmessage = function(event) {
         try {
             var data = JSON.parse(event.data);
-            if (['connected', 'error', 'success'].indexOf(data.cmd) > -1 && debug) {
+            if (data.cmd === 'connected' || data.cmd === 'error' || data.cmd === 'success') {
                 showMessage(null, 'debug', event.data, 'received');
             }
             else if (data.cmd === 'available') {
                 showMessage(null, 'debug', event.data, 'received');
                 if (typeof logTypes[data.type] === 'undefined') {
-                    logTypes[data.type] = {
-                        enabled: true,
-                        servers: [data.server],
-                    };
+                    logTypes[data.type] = new LogType(data.display_type);
                     var op = document.createElement('option');
                     op.setAttribute('selected', '');
-                    op.textContent = data.type;
-                    document.getElementById('logtypes').appendChild(op);
-                }
-                else {
-                    logTypes[data.type].servers.push(data.server);
+                    op.value = data.type;
+                    op.textContent = data.display_type;
+                    logTypesElement.appendChild(op);
                 }
                 if (logTypes[data.type].enabled) {
                     var msg = JSON.stringify({
@@ -625,13 +654,14 @@ function setupWebSocket(connectionInfo) {
                 }
             }
             else if (data.cmd === 'line') {
-                if (logTypes[data.log_type].enabled && (!(onlyMe instanceof RegExp) || onlyMe.test(data.text))) {
-                    if (typeof data.http_status !== 'undefined') {
-                        var status = data.http_status < 400 ? 200 : 100 * Math.floor(data.http_status / 100);
-                        showMessage(data.disp_time, data.log_type, data.text, 'log', 'http-status-' + status);
+                if (!(onlyMe instanceof RegExp) || onlyMe.test(data.text)) {
+                    if (typeof data.http_status === 'undefined') {
+                        showMessage(data.disp_time, data.log_type, data.text, 'log');
                     }
                     else {
-                        showMessage(data.disp_time, data.log_type, data.text, 'log');
+                        showMessage(data.disp_time, data.log_type, data.text, 'log', 'http-status-' +
+                            (data.http_status < 400 ? 200 : 100 * Math.floor(data.http_status / 100))
+                        );
                     }
                 }
             }

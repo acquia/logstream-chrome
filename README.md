@@ -48,7 +48,7 @@ Click the "Connect" button to start streaming logs. You can browse around your
 website and watch as the logs are generated in real time.
 
 ## TODO
-- Keep a default set of log types to populate the "Show log types" form element initially
+- Fix the time is being shown in the wrong timezone, probably because it's being parsed in UTC when it's actually in EST
 - Sort sitenames and environments alphabetically, with dev/stage/prod at the top
 - See if the way we make API calls can be modified to not leak the user's Cloud creds in the URL
 - Improve the way translations currently work to be compatible with https://developer.chrome.com/extensions/i18n
