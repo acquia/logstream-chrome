@@ -20,26 +20,10 @@ extension's settings. Note that these will be stored unencrypted on your local
 machine (as are all passwords that Chrome remembers on your behalf) so be sure
 to remove them when you're done if you are uncomfortable with that.
 
-Now you need to run Chrome with CORS disabled so that your browser can make API
-requests to Acquia Cloud from your own websites. Close Chrome if you already
-have it open. (When you're done using this extension, restart Chrome normally
-before using it for anything else in order to preserve your security.) To start
-Chrome without CORS, run the appropriate command below in a terminal or command
-prompt:
-
-- On Linux: `google-chrome --disable-web-security`
-- On Mac: usually `open -a Google\ Chrome --args --disable-web-security`
-- On Windows: you need to directly reference the Chrome executable, which can
-  be installed in different places. A common example is
-  `"%USERPROFILE%\AppData\Local\Google\Chrome\Application\chrome.exe" --disable-web-security`.
-  If you are not sure where the Chrome executable is, you can right-click on a
-  shortcut to open Chrome, click on "Properties," and then copy the value in
-  the "Target" field on the dialog that will appear.
-
-Next, navigate to the website from which you want to stream logs. Open the
-Chrome Developer Tools (press `Ctrl+Shift+J` or navigate to
-`Hamburger > More tools > Developer tools`) and switch to the "Stream logs"
-panel.
+Fourth, navigate to the website from which you want to stream logs. Open the
+Chrome Developer Tools (press `Ctrl + Shift + J` or navigate to
+`&#x2261; &raquo; More tools &raquo; Developer tools`) and switch to the
+"Stream logs" panel.
 
 Finally, select the sitename and environment for the site you are
 investigating, then click the "Connect" button to start streaming logs. You can
@@ -48,7 +32,6 @@ browse around your website and watch as the logs are generated in real time.
 ## TODO
 
 ### High priority
-- It seems like cross-origin requests can be made in background.js. Try moving them there and see if we can get rid of the "start chrome in no-CORS mode" requirement. If that doesn't work, make it more clear what happened if CORS fails, and write a module for Drupal 7 and 8 that allows use of this extension without disabling CORS in Chrome. Update the extension code to use this if it's available and update the README to reflect this.
 - Improve the way translations currently work to be compatible with https://developer.chrome.com/extensions/i18n
     use http://tumble.jeremyhubert.com/post/7076881720/translating-html-in-a-chrome-extension for HTML
 

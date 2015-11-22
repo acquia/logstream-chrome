@@ -23,12 +23,43 @@ var uuid = (function() {
             d1 = buf[1],
             d2 = buf[2],
             d3 = buf[3];
-        return lut[d0&0xff]+     lut[d0>>8&0xff]+    lut[d0>>16&0xff]+     lut[d0>>24&0xff]+'-'+
-               lut[d1&0xff]+     lut[d1>>8&0xff]+'-'+lut[d1>>16&0x0f|0x40]+lut[d1>>24&0xff]+'-'+
-               lut[d2&0x3f|0x80]+lut[d2>>8&0xff]+'-'+lut[d2>>16&0xff]+     lut[d2>>24&0xff]+
-               lut[d3&0xff]     +lut[d3>>8&0xff]+    lut[d3>>16&0xff]+     lut[d3>>24&0xff];
+        return lut[d0&0xff]     +lut[d0>>8&0xff]    +lut[d0>>16&0xff]     +lut[d0>>24&0xff]+'-'+
+               lut[d1&0xff]     +lut[d1>>8&0xff]+'-'+lut[d1>>16&0x0f|0x40]+lut[d1>>24&0xff]+'-'+
+               lut[d2&0x3f|0x80]+lut[d2>>8&0xff]+'-'+lut[d2>>16&0xff]     +lut[d2>>24&0xff]+
+               lut[d3&0xff]     +lut[d3>>8&0xff]    +lut[d3>>16&0xff]     +lut[d3>>24&0xff];
     };
 })();
+
+/**
+ * Retrieve information from the Acquia Cloud API.
+ *
+ * @param {String} user
+ *   The username of the account requesting the information.
+ * @param {String} pass
+ *   The password of the account requesting the information.
+ * @param {String} path
+ *   The resource being requested. This is used to construct the API endpoint
+ *   from which the information is retrieved, like this:
+ *   `'https://cloudapi.acquia.com/v1/' + path + '.json'`
+ * @param {Function} sendResponse
+ *   A callback to which the result of the request should be sent.
+ */
+function getCloudInfo(user, pass, path, sendResponse) {
+    var url = 'https://cloudapi.acquia.com/v1/' + path + '.json',
+        xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === xhr.DONE) {
+            sendResponse({
+                responseText: xhr.responseText,
+                status: xhr.status,
+                statusText: xhr.statusText,
+            });
+        }
+    };
+    xhr.setRequestHeader('Authorization', 'Basic ' + btoa(user + ':' + pass));
+    xhr.send(null);
+}
 
 /*
  * Add the X-Request-ID header to each request while we're tracking requests.
@@ -63,12 +94,20 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             window.open(chrome.runtime.getURL('options.html'));
         }
     }
+    // Enable sending the X-Request-ID header with a specific UUID to track the
+    // current user's requests through the logs.
     else if (request === 'enableRequestHeaders') {
         onlyMe = uuid();
         sendResponse(onlyMe);
     }
+    // Stop tracking the current user's requests.
     else if (request === 'disableRequestHeaders') {
         onlyMe = false;
+    }
+    // Retrieve information from the Acquia Cloud API.
+    else if (request !== null && request.method === 'getCloudInfo') {
+        getCloudInfo(request.user, request.pass, request.path, sendResponse);
+        return true;
     }
 });
 

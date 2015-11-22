@@ -151,34 +151,32 @@ function logIfError(message) {
     }
 }
 
-/**
- * Holds Acquia Cloud API credentials.
- */
-function CloudAPI(user, pass) {
-    this.user = user;
-    this.pass = pass;
-}
+function getCloudInfo(path, success, failure) {
+    chrome.storage.local.get({
+            'acquia-logstream.username': '',
+            'acquia-logstream.password': '',
+        },
+        function(items) {
+            logIfError('Retrieving saved Cloud API credentials failed with the error: %error');
 
-/**
- * Retrieve info from the Acquia Cloud API.
- */
-CloudAPI.prototype.request = function(path, success, failure) {
-    var url = 'https://cloudapi.acquia.com/v1/' + path + '.json',
-        xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === xhr.DONE) {
-            if (xhr.status === 200) {
-                success(JSON.parse(xhr.responseText));
-            }
-            else {
-                failure(xhr);
-            }
+            chrome.runtime.sendMessage({
+                    method: 'getCloudInfo',
+                    user: items['acquia-logstream.username'],
+                    pass: items['acquia-logstream.password'],
+                    path: path,
+                },
+                function(response) {
+                    if (response.status === 200 || response.status === 204 || response.status === 304) {
+                        success(JSON.parse(response.responseText));
+                    }
+                    else {
+                        failure(response);
+                    }
+                }
+            );
         }
-    };
-    xhr.setRequestHeader('Authorization', 'Basic ' + btoa(this.user + ':' + this.pass));
-    xhr.send(null);
-};
+    );
+}
 
 /**
  * Tear down.
@@ -252,12 +250,12 @@ window.addEventListener('load', function() {
     }
 
     // Populates the options of the sitename select list from the cache and remotely.
-    function resetSitenameList(cloud, sitelist, items) {
+    function resetSitenameList(sitelist, lastSitename) {
         // Load from cache for speed.
-        renderSitenameList(Object.keys(sitelist), null, items['acquia-logstream.sitename']);
+        renderSitenameList(Object.keys(sitelist), null, lastSitename);
         // Refresh from Cloud.
         showMessage(null, 'debug', t('Refreshing site list...'));
-        cloud.request(
+        getCloudInfo(
             'sites',
             function(sites) {
                 if (!sites.length) {
@@ -267,13 +265,11 @@ window.addEventListener('load', function() {
                         'or ask an administrator for a site you work on to give you access.'
                     ), 'extension-error');
                 }
-                renderSitenameList(sites, sitelist, items['acquia-logstream.sitename']);
+                renderSitenameList(sites, sitelist, lastSitename);
                 showMessage(null, 'debug', t('Site list refreshed successfully.'));
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
             },
             function(xhr) {
-                document.getElementById('sitename').value = items['acquia-logstream.sitename'];
-                document.getElementById('environment').value = items['acquia-logstream.environment'] || 'prod';
                 showMessage(null, 'info', t('Refreshing the site list failed with status %status: %response', {
                     status: xhr.statusText,
                     response: xhr.responseText,
@@ -355,12 +351,12 @@ window.addEventListener('load', function() {
     }
 
     // Populates the options of the environment select list from the cache and remotely.
-    function resetEnvironmentList(cloud, sitename, sitelist, items) {
+    function resetEnvironmentList(sitename, sitelist, lastEnvName) {
         // Load from cache for speed.
-        renderEnvironmentList(Object.keys(sitelist[sitename]), null, items['acquia-logstream.environment']);
+        renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
         // Refresh from Cloud.
         showMessage(null, 'debug', t('Refreshing environments list for site "%site"...', {site: sitename}));
-        cloud.request(
+        getCloudInfo(
             'sites/' + sitename + '/envs',
             function(envs) {
                 if (!envs.length) {
@@ -369,18 +365,13 @@ window.addEventListener('load', function() {
                         { site: sitename }
                     ), 'extension-error');
                 }
-                renderEnvironmentList(
-                    envs.map(function(env) {
-                        return env.name;
-                    }),
-                    sitelist[sitename],
-                    items['acquia-logstream.environment']
-                );
+                renderEnvironmentList(envs.map(function(env) {
+                    return env.name;
+                }), sitelist[sitename], lastEnvName);
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
                 showMessage(null, 'debug', t('Environment list refreshed successfully.'));
             },
             function(xhr) {
-                document.getElementById('environment').value = items['acquia-logstream.environment'] || 'prod';
                 showMessage(null, 'debug', t(
                     'Retrieving environments for site "%site" failed.',
                     { site: sitename }
@@ -401,23 +392,15 @@ window.addEventListener('load', function() {
     }
 
     chrome.storage.local.get({
-            'acquia-logstream.username': '',
-            'acquia-logstream.password': '',
             'acquia-logstream.sitename': '',
             'acquia-logstream.environment': '',
             'acquia-logstream.onlyme': onlyMe,
             'acquia-logstream.logtypes': JSON.stringify(logTypes),
-            // {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
+            // Sitelist format is {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
             'acquia-logstream.sitelist': JSON.stringify({}),
         },
         function(items) {
             logIfError('Retrieving your saved settings failed with the error: %error');
-
-            var user = items['acquia-logstream.username'],
-                pass = items['acquia-logstream.password'];
-            if (!user || !pass) {
-                return document.getElementById('credentials-error').classList.remove('hidden');
-            }
 
             onlyMe = items['acquia-logstream.onlyme'];
             document.getElementById('show-only-me').checked = !!onlyMe;
@@ -438,8 +421,7 @@ window.addEventListener('load', function() {
             }
             document.getElementById('logtypes').appendChild(logOptions);
 
-            var cloud = new CloudAPI(user, pass),
-                sitelist = JSON.parse(items['acquia-logstream.sitelist']),
+            var sitelist = JSON.parse(items['acquia-logstream.sitelist']),
                 lastSite;
 
             // Update the environment list when the site changes.
@@ -449,11 +431,11 @@ window.addEventListener('load', function() {
                     return;
                 }
                 lastSite = sitename;
-                resetEnvironmentList(cloud, sitename, sitelist, items);
+                resetEnvironmentList(sitename, sitelist, items['acquia-logstream.environment']);
             });
 
             // Update the sitename list.
-            resetSitenameList(cloud, sitelist, items);
+            resetSitenameList(sitelist, items['acquia-logstream.sitename']);
 
             // (Dis)connect when the button is clicked.
             var ws;
@@ -474,7 +456,7 @@ window.addEventListener('load', function() {
                     }
 
                     showMessage(null, 'info', t('Connecting...'));
-                    cloud.request(
+                    getCloudInfo(
                         'sites/' + site + '/envs/' + env + '/logstream',
                         function(connectionInfo) {
                             ws = setupWebSocket(connectionInfo);
@@ -515,19 +497,15 @@ window.addEventListener('load', function() {
         chrome.storage.local.set({'acquia-logstream.environment': envName});
         // Cache the list of domains for this environment.
         chrome.storage.local.get({
-                'acquia-logstream.username': '',
-                'acquia-logstream.password': '',
+                // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
                 'acquia-logstream.domains': JSON.stringify({}),
             },
             function(items) {
                 if (logIfError('Saving the association between a domain and its sitename and environment failed with the error: %error')) {
                     return;
                 }
-                var user = items['acquia-logstream.username'],
-                    pass = items['acquia-logstream.password'],
-                    domains = JSON.parse(items['acquia-logstream.domains']),
-                    cloud = new CloudAPI(user, pass);
-                cloud.request(
+                var domains = JSON.parse(items['acquia-logstream.domains']);
+                getCloudInfo(
                     'sites/' + sitename + '/envs/' + envName + '/domains',
                     function(results) {
                         for (var i = 0, l = results.length; i < l; i++) {
@@ -569,7 +547,8 @@ window.addEventListener('load', function() {
 
     // Check to see if the current domain is associated with a cached sitename and environment, and if so, automatically pick them.
     chrome.storage.local.get({
-            'acquia-logstream.domains': JSON.stringify({}), // {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+            // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+            'acquia-logstream.domains': JSON.stringify({}),
         },
         function(items) {
             logIfError('Checking if the current website has a cached association with a sitename and environment failed with the error: %error');
@@ -602,15 +581,12 @@ window.addEventListener('load', function() {
     function onCredentialsChanged(items) {
         logIfError('Retrieving your saved settings failed with the error: %error');
 
-        var user = items['acquia-logstream.username'],
-            pass = items['acquia-logstream.password'],
-            cloud = new CloudAPI(user, pass);
-        if (!user || !pass) {
+        if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
             return document.getElementById('credentials-error').classList.remove('hidden');
         }
         document.getElementById('credentials-error').classList.add('hidden');
 
-        resetSitenameList(cloud, {}, items);
+        resetSitenameList({}, items['acquia-logstream.sitename']);
     }
     chrome.storage.onChanged.addListener(function(changes, namespace) {
         for (var key in changes) {
@@ -618,6 +594,7 @@ window.addEventListener('load', function() {
                 return chrome.storage.local.get({
                     'acquia-logstream.username': '',
                     'acquia-logstream.password': '',
+                    'acquia-logstream.sitename': '',
                 }, onCredentialsChanged);
             }
         }
@@ -632,6 +609,18 @@ window.addEventListener('load', function() {
     });
 });
 
+/**
+ * Sets up the WebSocket connection to stream logs from Acquia Cloud.
+ *
+ * WebSockets do not have cross-origin restrictions, which is why this function
+ * can be called from within this content script.
+ *
+ * @param {Object} connectionInfo
+ *   A map containing information required to connect via WebSocket to Acquia
+ *   Cloud. This includes the `url` parameter (the WebSocket URL to which to
+ *   connect) and the `msg` parameter (used to verify authentication). This
+ *   map is obtained from the Acquia Cloud API.
+ */
 function setupWebSocket(connectionInfo) {
     var ws = new WebSocket(connectionInfo.url),
         logTypesElement = document.getElementById('logtypes');
