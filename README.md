@@ -22,8 +22,7 @@ to remove them when you're done if you are uncomfortable with that.
 
 Fourth, navigate to the website from which you want to stream logs. Open the
 Chrome Developer Tools (press `Ctrl + Shift + J` or navigate to
-`&#x2261; &raquo; More tools &raquo; Developer tools`) and switch to the
-"Stream logs" panel.
+`≡ » More tools » Developer tools`) and switch to the "Stream logs" panel.
 
 Finally, select the sitename and environment for the site you are
 investigating, then click the "Connect" button to start streaming logs. You can
