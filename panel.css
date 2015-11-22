@@ -143,7 +143,7 @@ label[for="logtypes"] {
 }
 
 .received .type::before {
-    color: rgba(10, 140, 114, 1); /* aqua */
+    color: rgba(10, 140, 114, 1); /* turquoise */
     content: "\25C0 ";
     margin-right: 5px;
 }
@@ -151,6 +151,12 @@ label[for="logtypes"] {
 .sent .type::before {
     color: rgba(51, 10, 105, 1); /* purple */
     content: "\25b6 ";
+    margin-right: 5px;
+}
+
+.here .type::before {
+    color: rgba(30, 75, 110, 1); /* prussian blue */
+    content: "\25bc ";
     margin-right: 5px;
 }
 

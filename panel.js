@@ -146,7 +146,7 @@ function logIfError(message) {
     if (typeof chrome.runtime.lastError === 'string') {
         showMessage(null, 'debug', t(message, {
             error: chrome.runtime.lastError,
-        }), 'extension-error');
+        }), 'extension-error', 'here');
         return true;
     }
 }
@@ -254,7 +254,7 @@ window.addEventListener('load', function() {
         // Load from cache for speed.
         renderSitenameList(Object.keys(sitelist), null, lastSitename);
         // Refresh from Cloud.
-        showMessage(null, 'debug', t('Refreshing site list...'));
+        showMessage(null, 'debug', t('Refreshing site list...'), 'sent');
         getCloudInfo(
             'sites',
             function(sites) {
@@ -266,10 +266,11 @@ window.addEventListener('load', function() {
                     ), 'extension-error');
                 }
                 renderSitenameList(sites, sitelist, lastSitename);
-                showMessage(null, 'debug', t('Site list refreshed successfully.'));
+                showMessage(null, 'debug', t('Site list refreshed successfully.'), 'received');
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
             },
             function(xhr) {
+                // This is marked as "info" instead of "debug" because something pretty fundamental is probably wrong if this request fails.
                 showMessage(null, 'info', t('Refreshing the site list failed with status %status: %response', {
                     status: xhr.statusText,
                     response: xhr.responseText,
@@ -355,7 +356,7 @@ window.addEventListener('load', function() {
         // Load from cache for speed.
         renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
         // Refresh from Cloud.
-        showMessage(null, 'debug', t('Refreshing environments list for site "%site"...', {site: sitename}));
+        showMessage(null, 'debug', t('Refreshing environments list for site "%site"...', {site: sitename}), 'sent');
         getCloudInfo(
             'sites/' + sitename + '/envs',
             function(envs) {
@@ -369,13 +370,14 @@ window.addEventListener('load', function() {
                     return env.name;
                 }), sitelist[sitename], lastEnvName);
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
-                showMessage(null, 'debug', t('Environment list refreshed successfully.'));
+                showMessage(null, 'debug', t('Environment list refreshed successfully.'), 'received');
             },
             function(xhr) {
-                showMessage(null, 'debug', t(
-                    'Retrieving environments for site "%site" failed.',
-                    { site: sitename }
-                ), 'extension-error');
+                showMessage(null, 'debug', t('Retrieving environments for site "%site" failed. %status: %response', {
+                    site: sitename,
+                    status: xhr.statusText,
+                    response: xhr.responseText,
+                }), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
             }
         );
     }
@@ -520,7 +522,7 @@ window.addEventListener('load', function() {
                         showMessage(null, 'debug', t('Retrieving domains failed with status %status: %response', {
                             status: xhr.statusText,
                             response: xhr.responseText,
-                        }), 'extension-error');
+                        }), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
                     }
                 );
             }
@@ -554,7 +556,7 @@ window.addEventListener('load', function() {
             logIfError('Checking if the current website has a cached association with a sitename and environment failed with the error: %error');
             chrome.devtools.inspectedWindow.eval("window.location.hostname", function(hostname, error) {
                 if (error || !hostname) {
-                    showMessage(null, 'debug', t('Unable to get current hostname: %error', {error: error}), 'extension-error');
+                    showMessage(null, 'debug', t('Unable to get current hostname: %error', {error: error}), 'extension-error', 'here');
                 }
                 else {
                     var domains = JSON.parse(items['acquia-logstream.domains']);
@@ -676,15 +678,14 @@ function setupWebSocket(connectionInfo) {
             }
         }
         catch(e) {
-            showMessage(null, 'debug', t(
-                'Error receiving event: %error',
-                { error: e+'' }
-            ), 'extension-error');
+            showMessage(null, 'debug', t('Error receiving event: %error', {
+                error: e+'',
+            }), 'extension-error', 'here');
         }
     };
 
     ws.onclose = function() {
-        showMessage(null, 'debug', t('Connection closed'));
+        showMessage(null, 'debug', t('Connection closed'), 'here');
         document.getElementById('connect').value = t('Reconnect');
     };
 

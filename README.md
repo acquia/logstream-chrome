@@ -31,7 +31,7 @@ browse around your website and watch as the logs are generated in real time.
 ## TODO
 
 ### High priority
-- Translate panel.html, panel.js
+- Translate panel.js
 
 ### Medium priority
 - After saving AC API credentials, try a sample request to see if it succeeds or fails to determine if the credentials worked or not.

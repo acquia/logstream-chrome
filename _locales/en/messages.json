@@ -33,12 +33,45 @@
         "description": "Warns users about how their password will be stored."
     },
 
+    "panel_sitename": {
+        "message": "Sitename:",
+        "description": "The label of the sitename select element on the log streaming panel."
+    },
+    "panel_environment": {
+        "message": "Environment:",
+        "description": "The label of the environment select element on the log streaming panel."
+    },
+    "panel_logTypes": {
+        "message": "Show log types:",
+        "description": "The label of the multi-select element on the log streaming panel for choosing which log types to display."
+    },
+    "panel_onlyMe": {
+        "message": "Show only logs I generate",
+        "description": "The label of the checkbox on the log streaming panel that toggles whether to only show logs generated as a result of the current user's requests."
+    },
+    "panel_connect": {
+        "message": "Connect",
+        "description": "The default text of the Connect button on the log streaming panel."
+    },
+
     "errors_getSettings": {
         "message": "Retrieving your saved settings failed with the error: $error$",
         "description": "The error message to display when saved settings cannot be retrieved.",
         "placeholders": {
             "error": {
                 "content": "$1"
+            }
+        }
+    },
+    "errors_credentials": {
+        "message": "You must $aOpen$enter valid Acquia Cloud login credentials in this extension's settings$aClose$ in order to connect to the log streaming service.",
+        "description": "Displays on the main Dev Tools log streaming panel when no Acquia Cloud credentials have been entered.",
+        "placeholders": {
+            "aOpen": {
+                "content": "<a href=\"#\" class=\"options-link\">"
+            },
+            "aClose": {
+                "content": "</a>"
             }
         }
     }

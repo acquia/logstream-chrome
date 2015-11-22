@@ -2,33 +2,33 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Acquia Logstream Client</title>
+    <title data-i18n="extension_name">Acquia Cloud Logstream Client</title>
     <link rel="stylesheet" href="panel.css">
 </head>
 <body>
     <div id="form-wrapper">
         <form id="controls">
-            <p class="error hidden" id="credentials-error">
+            <p class="error hidden" id="credentials-error" data-i18n="innerHTML=errors_credentials">
                 You must <a href="#" class="options-link">enter valid Acquia
-                login credentials in this extension's settings</a> in order to
-                connect to the log streaming service.
+                Cloud login credentials in this extension's settings</a> in
+                order to connect to the log streaming service.
             </p>
             <fieldset>
                 <img alt="Acquia" height="48" src="icon48.png" width="48" />
             </fieldset>
             <fieldset class="stacked">
                 <label for="sitename">
-                    <span class="label align-label-column">Sitename:</span>
+                    <span class="label align-label-column" data-i18n="panel_sitename">Sitename:</span>
                     <select id="sitename"></select>
                 </label>
                 <label for="environment">
-                    <span class="label align-label-column">Environment:</span>
+                    <span class="label align-label-column" data-i18n="panel_environment">Environment:</span>
                     <select id="environment"></select>
                 </label>
             </fieldset>
             <fieldset>
                 <label for="logtypes">
-                    <span class="label">Show log types:</span>
+                    <span class="label" data-i18n="panel_logTypes">Show log types:</span>
                 </label>
                 <select id="logtypes" multiple="true" size="3">
                 </select>
@@ -36,11 +36,11 @@
             <fieldset class="stacked">
                 <label for="show-only-me">
                     <input id="show-only-me" type="checkbox" value="" checked />
-                    <span class="label">Show only logs I generate</span>
+                    <span class="label" data-i18n="panel_onlyMe">Show only logs I generate</span>
                 </label>
             </fieldset>
             <fieldset>
-                <input autofocus id="connect" type="button" value="Connect" />
+                <input autofocus id="connect" type="button" value="Connect" data-i18n="value=panel_connect" />
             </fieldset>
         </form>
     </div>
