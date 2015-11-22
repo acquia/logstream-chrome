@@ -1,0 +1,45 @@
+{
+    "extension_name": {
+        "message": "Acquia Cloud Logstream Client",
+        "description": "The name of this extension."
+    },
+    "extension_shortName": {
+        "message": "Logstream",
+        "description": "The short name of this extension, used when the full name is too long to display."
+    },
+    "extension_description": {
+        "message": "View logs generated as you browse around your site.",
+        "description": "The description of this extension displayed on the extensions page."
+    },
+
+    "options_title": {
+        "message": "Acquia Cloud Logstream Client Options",
+        "description": "The title of the Options page for this extension."
+    },
+    "options_prompt": {
+        "message": "Provide your Acquia Cloud login credentials in order to connect to the Acquia Cloud log streaming API. They will be saved automatically.",
+        "description": "Prompts users to enter their username and password on the extension's Options page."
+    },
+    "options_username": {
+        "message": "Email:",
+        "description": "The label of the username (email) input field on this extension's Options page."
+    },
+    "options_password": {
+        "message": "Password:",
+        "description": "The label of the password input field on this extension's Options page."
+    },
+    "options_passwordWarning": {
+        "message": "Note that these credentials are saved unencrypted on your local machine (as are all passwords that Chrome remembers). This is generally not an issue because stealing the credentials would require physical or privileged access to your machine, in which case someone could just install a keylogger anyway. However, if you are working on a shared machine or do not want your Acquia Cloud password stored unencrypted locally, please remember to come back to this options page and erase your password after you finish using this extension.",
+        "description": "Warns users about how their password will be stored."
+    },
+
+    "errors_getSettings": {
+        "message": "Retrieving your saved settings failed with the error: $error$",
+        "description": "The error message to display when saved settings cannot be retrieved.",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    }
+}

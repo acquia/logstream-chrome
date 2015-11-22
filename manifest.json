@@ -1,10 +1,19 @@
 {
     "manifest_version": 2,
 
-    "name": "Acquia Logstream Client",
-    "description": "View logs generated as you browse around your site.",
-    "version": "1.0",
+    "name": "__MSG_extension_name__",
+    "short_name": "__MSG_extension_shortName__",
+    "description": "__MSG_extension_description__",
+    "version": "1.0.0",
     "minimum_chrome_version": "26.0",
+    "default_locale": "en",
+    "offline_enabled": false,
+
+    "background": {
+        "scripts": ["background.js"]
+    },
+
+    "devtools_page": "devtools.html",
 
     "options_page": "options.html",
     "options_ui": {
@@ -26,11 +35,5 @@
         "16": "icon16.png",
         "48": "icon48.png",
         "128": "icon128.png"
-    },
-
-    "background": {
-        "scripts": ["background.js"]
-    },
-
-    "devtools_page": "devtools.html"
+    }
 }

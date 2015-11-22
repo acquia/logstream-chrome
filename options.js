@@ -14,7 +14,7 @@ window.addEventListener('load', function() {
         },
         function(items) {
             if (typeof chrome.runtime.lastError === 'string') {
-                alert('Retrieving your saved settings failed with the error: ' + chrome.runtime.lastError);
+                alert(chrome.i18n.getMessage('errors_getSettings', chrome.runtime.lastError));
             }
             document.getElementById('username').value = items['acquia-logstream.username'];
             document.getElementById('password').value = items['acquia-logstream.password'];
