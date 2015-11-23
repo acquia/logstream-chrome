@@ -30,9 +30,6 @@ browse around your website and watch as the logs are generated in real time.
 
 ## TODO
 
-### High priority
-- Translate panel.js
-
 ### Medium priority
 - After saving AC API credentials, try a sample request to see if it succeeds or fails to determine if the credentials worked or not.
 - Use ADL styles: https://wiki.acquia.com/display/UX/ADL+Style+guidelines
@@ -42,7 +39,8 @@ browse around your website and watch as the logs are generated in real time.
 
 ### Low priority
 - Allow filtering streamed logs using regex. (Should this also filter logs that have already been rendered?) This seems to be safe (the main attack vector is a DoS which isn't a big deal since why would a user do that to themselves?) but needs error handling since regexes will often fail if executed while being written (or if written poorly).
-- Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional) and make LOG_TYPE keys for extension-error-debug and extension-error-info and undefined in order to allow leaving off type and datetime more often
+- Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional)
+- Make logTypes for extension-error-debug and extension-error-info and undefined
 - Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
 - Clean up the permissions in manifest.json
 - Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites. There don't seem to be any vanilla JS frameworks for this though.

@@ -53,10 +53,102 @@
         "message": "Connect",
         "description": "The default text of the Connect button on the log streaming panel."
     },
+    "panel_disconnect": {
+        "message": "Stop streaming",
+        "description": "The text of the button on the log streaming panel that will cause logs to stop streaming when clicked."
+    },
+    "panel_reconnect": {
+        "message": "Reconnect",
+        "description": "The text of the button on the log streaming panel that will cause logs to restart streaming when clicked."
+    },
+
+    "logType_apacheError": {
+        "message": "Apache error"
+    },
+    "logType_apacheRequest": {
+        "message": "Apache request"
+    },
+    "logType_balancerRequest": {
+        "message": "Balancer request"
+    },
+    "logType_drupalRequest": {
+        "message": "Drupal request"
+    },
+    "logType_drupalWatchdog": {
+        "message": "Drupal watchdog"
+    },
+    "logType_mysqlSlow": {
+        "message": "MySQL slow query"
+    },
+    "logType_phpError": {
+        "message": "PHP error"
+    },
+    "logType_varnishRequest": {
+        "message": "Varnish request"
+    },
+    "logType_debug": {
+        "message": "debug"
+    },
+    "logType_info": {
+        "message": "info"
+    },
+
+    "info_refreshSitesStart": {
+        "message": "Refreshing site list...",
+        "description": "A debug message that displays when the site list is about to be retrieved from the Acquia Cloud API."
+    },
+    "info_refreshSitesSuccess": {
+        "message": "Site list refreshed successfully.",
+        "description": "A debug message that displays when refreshing the site list from the Acquia Cloud API has completed."
+    },
+    "info_refreshEnvironmentsStart": {
+        "message": "Refreshing environments list for site \"$site$\"...",
+        "description": "A debug message that displays when the environment list is about to be retrieved from the Acquia Cloud API.",
+        "placeholders": {
+            "site": {
+                "content": "$1",
+                "example": "devcloud:mysite"
+            }
+        }
+    },
+    "info_refreshEnvironmentsSuccess": {
+        "message": "Environment list refreshed successfully.",
+        "description": "A debug message that displays when refreshing the environment list from the Acquia Cloud API has completed."
+    },
+    "info_connecting": {
+        "message": "Connecting...",
+        "description": "An informational message that displays in the log stream after the Connect button is pressed as a visual cue that the log stream connection is being established."
+    },
+    "info_connected": {
+        "message": "Connected successfully.",
+        "description": "An informational message that displays in the log stream after a WebSocket connection is successfully established."
+    },
+    "info_connectionClosed": {
+        "message": "The log streaming connection closed.",
+        "description": "A debug message that displays in the log stream after a WebSocket connection is closed."
+    },
 
     "errors_getSettings": {
         "message": "Retrieving your saved settings failed with the error: $error$",
-        "description": "The error message to display when saved settings cannot be retrieved.",
+        "description": "The error message that displays in the general case when saved settings cannot be retrieved.",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    },
+    "errors_getCachedDomainsFailed": {
+        "message": "Retrieving cached associations between domains, sitenames, and environments failed with the error: $error$",
+        "description": "The error message that displays when the domain cache cannot be retrieved.",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    },
+    "errors_getCredentialsFailed": {
+        "message": "Retrieving saved Acquia authentication credentials failed with the error: $error$",
+        "description": "The error message that displays when saved login settings cannot be retrieved.",
         "placeholders": {
             "error": {
                 "content": "$1"
@@ -74,5 +166,109 @@
                 "content": "</a>"
             }
         }
+    },
+    "errors_noSites": {
+        "message": "You do not have access to any sites on Acquia Cloud. To stream logs, create a site (e.g. at https://insight.acquia.com/subscriptions/add or by asking your account manager) or ask your site's administrator to give you access.",
+        "description": "Displays in the log stream when the authenticated user has no sites on Acquia Cloud."
+    },
+    "errors_refreshSitesFailed": {
+        "message": "Refreshing the site list failed with status $status$: $response$",
+        "description": "An informational message that displays in the log stream when refreshing the site list from the Acquia Cloud API fails.",
+        "placeholders": {
+            "status": {
+                "content": "$1",
+                "example": "401 Unauthorized"
+            },
+            "response": {
+                "content": "$2",
+                "example": "{\"time\":\"2015-11-22 23:04:11 +0000\",\"message\":\"Not authorized\"}"
+            }
+        }
+    },
+    "errors_noEnvironments": {
+        "message": "The site \"$site$\" does not have any environments yet.",
+        "description": "Displays in the log stream when the selected site has no environments.",
+        "placeholders": {
+            "site": {
+                "content": "$1",
+                "example": "devcloud:mysite"
+            }
+        }
+    },
+    "errors_refreshEnvironmentsFailed": {
+        "message": "Retrieving environments for site \"$site$\" failed. $status$: $response$",
+        "description": "A debug message that displays in the log stream when refreshing the environment list from the Acquia Cloud API fails.",
+        "placeholders": {
+            "site": {
+                "content": "$1",
+                "example": "devcloud:mysite"
+            },
+            "status": {
+                "content": "$2",
+                "example": "401 Unauthorized"
+            },
+            "response": {
+                "content": "$3",
+                "example": "{\"time\":\"2015-11-22 23:04:11 +0000\",\"message\":\"Not authorized\"}"
+            }
+        }
+    },
+    "errors_invalidSitename": {
+        "message": "You must choose a valid sitename from which to stream logs.",
+        "description": "An alert that displays when the user tries to connect to the log stream without choosing a site from which to stream logs."
+    },
+    "errors_invalidEnvironment": {
+        "message": "You must choose a valid environment from which to stream logs.",
+        "description": "An alert that displays when the user tries to connect to the log stream without choosing an environment from which to stream logs."
+    },
+    "errors_getLogStreamConnectionInfoFailed": {
+        "message": "Unable to retrieve connection info. $status$: $response$",
+        "description": "An informational message that displays in the log stream when retrieving the WebSocket connection information from the Acquia Cloud API fails.",
+        "placeholders": {
+            "status": {
+                "content": "$1",
+                "example": "401 Unauthorized"
+            },
+            "response": {
+                "content": "$2",
+                "example": "{\"time\":\"2015-11-22 23:04:11 +0000\",\"message\":\"Not authorized\"}"
+            }
+        }
+    },
+    "errors_getDomainsFailed": {
+        "message": "Retrieving domains failed with status $status$: $response$",
+        "description": "A debug message that displays in the log stream when retrieving a list of domains from the Acquia Cloud API fails.",
+        "placeholders": {
+            "status": {
+                "content": "$1",
+                "example": "401 Unauthorized"
+            },
+            "response": {
+                "content": "$2",
+                "example": "{\"time\":\"2015-11-22 23:04:11 +0000\",\"message\":\"Not authorized\"}"
+            }
+        }
+    },
+    "errors_getHostname": {
+        "message": "Unable to get current hostname: $error$",
+        "description": "A debug message that displays in the log stream when retrieving the hostname from the active tab fails.",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    },
+    "errors_logEventHandlingFailed": {
+        "message": "Error receiving event: $error$",
+        "description": "A debug message that displays in the log stream when handling a log message fails.",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
+    },
+    "errors_wsError": {
+        "message": "An error occurred in the log streaming connection.",
+        "description": "An informational message that displays in the log stream when an error occurs in the WebSocket connection."
     }
 }

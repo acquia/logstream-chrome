@@ -5,20 +5,7 @@
  */
 (function() {
 
-// The translation dictionary to use.
-var dict = {};
-
-/**
- * Translates strings.
- */
-function t(s, replacements) {
-    if (typeof dict[s] === 'string') {
-        s = dict[s];
-    }
-    return typeof replacements === 'undefined' ? s : s.replace(/%(\w+)/g, function(match, word) {
-        return replacements.hasOwnProperty(word) ? replacements[word] : match;
-    });
-}
+var t = chrome.i18n.getMessage;
 
 /**
  * Describes a type of log entry.
@@ -49,21 +36,21 @@ function LogType(options) {
 // that we expect to be available. The list will be updated based on what the
 // servers advertise.
 var logTypes = {
-    'apache-error':    new LogType(t('Apache error')),
-    'apache-request':  new LogType(t('Apache request')),
-    'bal-request':     new LogType(t('Balancer request')),
-    'drupal-request':  new LogType(t('Drupal request')),
-    'drupal-watchdog': new LogType(t('Drupal watchdog')),
-    'mysql-slow':      new LogType(t('MySQL slow query')),
-    'php-error':       new LogType(t('PHP error')),
-    'varnish-request': new LogType(t('Varnish request')),
+    'apache-error':    new LogType(t('logType_apacheError')),
+    'apache-request':  new LogType(t('logType_apacheRequest')),
+    'bal-request':     new LogType(t('logType_balancerRequest')),
+    'drupal-request':  new LogType(t('logType_drupalRequest')),
+    'drupal-watchdog': new LogType(t('logType_drupalWatchdog')),
+    'mysql-slow':      new LogType(t('logType_mysqlSlow')),
+    'php-error':       new LogType(t('logType_phpError')),
+    'varnish-request': new LogType(t('logType_varnishRequest')),
     'debug':           new LogType({
         enabled: false,
-        name: t('debug'),
+        name: t('logType_debug'),
     }),
     'info':            new LogType({
         allowToggling: false,
-        name: t('info'),
+        name: t('logType_info'),
     }),
 };
 
@@ -144,9 +131,7 @@ var showMessage = (function() {
  */
 function logIfError(message) {
     if (typeof chrome.runtime.lastError === 'string') {
-        showMessage(null, 'debug', t(message, {
-            error: chrome.runtime.lastError,
-        }), 'extension-error', 'here');
+        showMessage(null, 'debug', t(message, chrome.runtime.lastError), 'extension-error', 'here');
         return true;
     }
 }
@@ -157,7 +142,7 @@ function getCloudInfo(path, success, failure) {
             'acquia-logstream.password': '',
         },
         function(items) {
-            logIfError('Retrieving saved Cloud API credentials failed with the error: %error');
+            logIfError('errors_getCredentialsFailed');
 
             chrome.runtime.sendMessage({
                     method: 'getCloudInfo',
@@ -254,27 +239,23 @@ window.addEventListener('load', function() {
         // Load from cache for speed.
         renderSitenameList(Object.keys(sitelist), null, lastSitename);
         // Refresh from Cloud.
-        showMessage(null, 'debug', t('Refreshing site list...'), 'sent');
+        showMessage(null, 'debug', t('info_refreshSitesStart'), 'sent');
         getCloudInfo(
             'sites',
             function(sites) {
                 if (!sites.length) {
-                    return showMessage(null, 'info', t(
-                        'You do not have access to any sites on Acquia Cloud. ' +
-                        'To stream logs, create a site at https://insight.acquia.com/subscriptions/add ' +
-                        'or ask an administrator for a site you work on to give you access.'
-                    ), 'extension-error');
+                    return showMessage(null, 'info', t('errors_noSites'), 'extension-error');
                 }
                 renderSitenameList(sites, sitelist, lastSitename);
-                showMessage(null, 'debug', t('Site list refreshed successfully.'), 'received');
+                showMessage(null, 'debug', t('info_refreshSitesSuccess'), 'received');
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
             },
             function(xhr) {
                 // This is marked as "info" instead of "debug" because something pretty fundamental is probably wrong if this request fails.
-                showMessage(null, 'info', t('Refreshing the site list failed with status %status: %response', {
-                    status: xhr.statusText,
-                    response: xhr.responseText,
-                }), 'extension-error');
+                showMessage(null, 'info', t(
+                    'errors_refreshSitesFailed',
+                    [xhr.statusText, xhr.responseText]
+                ), 'extension-error');
             }
         );
     }
@@ -356,28 +337,24 @@ window.addEventListener('load', function() {
         // Load from cache for speed.
         renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
         // Refresh from Cloud.
-        showMessage(null, 'debug', t('Refreshing environments list for site "%site"...', {site: sitename}), 'sent');
+        showMessage(null, 'debug', t('info_refreshEnvironmentsStart', sitename), 'sent');
         getCloudInfo(
             'sites/' + sitename + '/envs',
             function(envs) {
                 if (!envs.length) {
-                    return showMessage(null, 'info', t(
-                        'The site "%site" does not have any environments yet.',
-                        { site: sitename }
-                    ), 'extension-error');
+                    return showMessage(null, 'info', t('errors_noEnvironments', sitename), 'extension-error');
                 }
                 renderEnvironmentList(envs.map(function(env) {
                     return env.name;
                 }), sitelist[sitename], lastEnvName);
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
-                showMessage(null, 'debug', t('Environment list refreshed successfully.'), 'received');
+                showMessage(null, 'debug', t('info_refreshEnvironmentsSuccess'), 'received');
             },
             function(xhr) {
-                showMessage(null, 'debug', t('Retrieving environments for site "%site" failed. %status: %response', {
-                    site: sitename,
-                    status: xhr.statusText,
-                    response: xhr.responseText,
-                }), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
+                showMessage(null, 'debug', t(
+                    'errors_refreshEnvironmentsFailed',
+                    [sitename, xhr.statusText, xhr.responseText]
+                ), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
             }
         );
     }
@@ -402,7 +379,7 @@ window.addEventListener('load', function() {
             'acquia-logstream.sitelist': JSON.stringify({}),
         },
         function(items) {
-            logIfError('Retrieving your saved settings failed with the error: %error');
+            logIfError('errors_getSettings');
 
             onlyMe = items['acquia-logstream.onlyme'];
             document.getElementById('show-only-me').checked = !!onlyMe;
@@ -449,26 +426,26 @@ window.addEventListener('load', function() {
                         connectButton = this;
 
                     if (!site) {
-                        alert(t('You must choose a valid sitename from which to stream logs.'));
+                        alert(t('errors_invalidSitename'));
                         return;
                     }
                     if (!env) {
-                        alert(t('You must choose a valid environment from which to stream logs.'));
+                        alert(t('errors_invalidEnvironment'));
                         return;
                     }
 
-                    showMessage(null, 'info', t('Connecting...'));
+                    showMessage(null, 'info', t('info_connecting'));
                     getCloudInfo(
                         'sites/' + site + '/envs/' + env + '/logstream',
                         function(connectionInfo) {
                             ws = setupWebSocket(connectionInfo);
-                            connectButton.value = t('Stop streaming');
+                            connectButton.value = t('panel_disconnect');
                         },
                         function(xhr) {
-                            showMessage(null, 'info', t('Unable to retrieve connection info. %status: %response', {
-                                status: xhr.statusText,
-                                response: xhr.responseText,
-                            }), 'extension-error');
+                            showMessage(null, 'info', t(
+                                'errors_getLogStreamConnectionInfoFailed',
+                                [xhr.statusText, xhr.responseText]
+                            ), 'extension-error');
                             try {
                                 ws.close();
                             }
@@ -478,7 +455,7 @@ window.addEventListener('load', function() {
                 }
                 else { // ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING
                     ws.close();
-                    this.value = t('Reconnect');
+                    this.value = t('panel_reconnect');
                 }
             });
         }
@@ -503,7 +480,7 @@ window.addEventListener('load', function() {
                 'acquia-logstream.domains': JSON.stringify({}),
             },
             function(items) {
-                if (logIfError('Saving the association between a domain and its sitename and environment failed with the error: %error')) {
+                if (logIfError('errors_getCachedDomainsFailed')) {
                     return;
                 }
                 var domains = JSON.parse(items['acquia-logstream.domains']);
@@ -519,10 +496,10 @@ window.addEventListener('load', function() {
                         chrome.storage.local.set({'acquia-logstream.domains': JSON.stringify(domains)});
                     },
                     function(xhr) {
-                        showMessage(null, 'debug', t('Retrieving domains failed with status %status: %response', {
-                            status: xhr.statusText,
-                            response: xhr.responseText,
-                        }), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
+                        showMessage(null, 'debug', t(
+                            'errors_getDomainsFailed',
+                            [xhr.statusText, xhr.responseText]
+                        ), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
                     }
                 );
             }
@@ -553,10 +530,10 @@ window.addEventListener('load', function() {
             'acquia-logstream.domains': JSON.stringify({}),
         },
         function(items) {
-            logIfError('Checking if the current website has a cached association with a sitename and environment failed with the error: %error');
+            logIfError('errors_getCachedDomainsFailed');
             chrome.devtools.inspectedWindow.eval("window.location.hostname", function(hostname, error) {
                 if (error || !hostname) {
-                    showMessage(null, 'debug', t('Unable to get current hostname: %error', {error: error}), 'extension-error', 'here');
+                    showMessage(null, 'debug', t('errors_getHostname', error), 'extension-error', 'here');
                 }
                 else {
                     var domains = JSON.parse(items['acquia-logstream.domains']);
@@ -581,7 +558,7 @@ window.addEventListener('load', function() {
 
     // Update the credentials error, sitename list, and environment list when the Acquia Cloud credentials change.
     function onCredentialsChanged(items) {
-        logIfError('Retrieving your saved settings failed with the error: %error');
+        logIfError('errors_getCredentialsFailed');
 
         if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
             return document.getElementById('credentials-error').classList.remove('hidden');
@@ -629,7 +606,7 @@ function setupWebSocket(connectionInfo) {
 
     ws.onopen = function() {
         showMessage(null, 'debug', connectionInfo.msg, 'sent');
-        showMessage(null, 'info', t('Connected successfully.'));
+        showMessage(null, 'info', t('info_connected'));
         ws.send(connectionInfo.msg);
     };
 
@@ -678,19 +655,17 @@ function setupWebSocket(connectionInfo) {
             }
         }
         catch(e) {
-            showMessage(null, 'debug', t('Error receiving event: %error', {
-                error: e+'',
-            }), 'extension-error', 'here');
+            showMessage(null, 'debug', t('errors_logEventHandlingFailed', e.stack), 'extension-error', 'here');
         }
     };
 
     ws.onclose = function() {
-        showMessage(null, 'debug', t('Connection closed'), 'here');
-        document.getElementById('connect').value = t('Reconnect');
+        showMessage(null, 'debug', t('info_connectionClosed'), 'here');
+        document.getElementById('connect').value = t('panel_reconnect');
     };
 
     ws.onerror = function() {
-        showMessage(null, 'info', t('Connection error'), 'extension-error');
+        showMessage(null, 'info', t('errors_wsError'), 'extension-error');
     };
 
     return ws;
