@@ -144,19 +144,19 @@ label[for="logtypes"] {
 
 .received .type::before {
     color: rgba(10, 140, 114, 1); /* turquoise */
-    content: "\25C0 ";
+    content: "\25c0 "; /* Unicode BLACK LEFT-POINTING TRIANGLE */
     margin-right: 5px;
 }
 
 .sent .type::before {
     color: rgba(51, 10, 105, 1); /* purple */
-    content: "\25b6 ";
+    content: "\25b6 "; /* Unicode BLACK RIGHT-POINTING TRIANGLE */
     margin-right: 5px;
 }
 
 .here .type::before {
     color: rgba(30, 75, 110, 1); /* prussian blue */
-    content: "\25bc ";
+    content: "\25be "; /* Unicode BLACK DOWN-POINTING SMALL TRIANGLE (the non-small one is too big) */
     margin-right: 5px;
 }
 

@@ -605,19 +605,43 @@ function setupWebSocket(connectionInfo) {
         logTypesElement = document.getElementById('logtypes');
 
     ws.onopen = function() {
-        showMessage(null, 'debug', connectionInfo.msg, 'sent');
-        showMessage(null, 'info', t('info_connected'));
         ws.send(connectionInfo.msg);
     };
 
     ws.onmessage = function(event) {
         try {
             var data = JSON.parse(event.data);
-            if (data.cmd === 'connected' || data.cmd === 'error' || data.cmd === 'success') {
-                showMessage(null, 'debug', event.data, 'received');
+            if (data.cmd === 'connected') {
+                // Streaming connection opened.
+                if (data.server.indexOf('logstream-') === 0) {
+                    showMessage(null, 'info', t('info_connected'));
+                }
+                // Streaming from a specific server is enabled.
+                else {
+                    showMessage(null, 'debug', t('info_connectedToServer', data.server), 'received');
+                }
+            }
+            else if (data.cmd === 'error') {
+                showMessage(null, 'debug', t('errors_serverSideTrouble', event.data), 'received', 'extension-error');
+            }
+            else if (data.cmd === 'success') {
+                // A keep-alive message succeeded.
+                if (data.msg.cmd === 'keepalive') {
+                    showMessage(null, 'debug', t('info_keepalive'), 'received');
+                }
+                // A log type was successfully enabled.
+                else if (data.msg.cmd === 'enable') {
+                    showMessage(null, 'debug', t(
+                        'info_logTypeEnabled',
+                        [logTypes[data.msg.type].name, data.server]
+                    ), 'received');
+                }
+                else {
+                    showMessage(null, 'debug', event.data, 'received');
+                }
             }
             else if (data.cmd === 'available') {
-                showMessage(null, 'debug', event.data, 'received');
+                showMessage(null, 'debug', t('info_logTypeAvailable', [data.display_type, data.server]), 'received');
                 if (typeof logTypes[data.type] === 'undefined') {
                     logTypes[data.type] = new LogType(data.display_type);
                     var op = document.createElement('option');
@@ -632,7 +656,7 @@ function setupWebSocket(connectionInfo) {
                         type: data.type,
                         server: data.server,
                     });
-                    showMessage(null, 'debug', msg, 'sent');
+                    showMessage(null, 'debug', t('info_requestEnableLogType', [data.display_type, data.server]), 'sent');
                     ws.send(msg);
                 }
             }
@@ -652,6 +676,9 @@ function setupWebSocket(connectionInfo) {
                         );
                     }
                 }
+            }
+            else {
+                showMessage(null, 'debug', event.data, 'received');
             }
         }
         catch(e) {

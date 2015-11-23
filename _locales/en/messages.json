@@ -123,6 +123,62 @@
         "message": "Connected successfully.",
         "description": "An informational message that displays in the log stream after a WebSocket connection is successfully established."
     },
+    "info_connectedToServer": {
+        "message": "Connected to server $server$.",
+        "description": "A debug message that displays in the log stream when the extension learns that logs can be streamed from a specific server.",
+        "placeholders": {
+            "server": {
+                "content": "$1",
+                "example": "bal-3"
+            }
+        }
+    },
+    "info_logTypeAvailable": {
+        "message": "$type$ logs are available for streaming from $server$.",
+        "description": "A debug message that displays in the log stream when streaming a specific type of log from a specific server is available for streaming.",
+        "placeholders": {
+            "type": {
+                "content": "$1",
+                "example": "Balancer request"
+            },
+            "server": {
+                "content": "$2",
+                "example": "bal-3"
+            }
+        }
+    },
+    "info_requestEnableLogType": {
+        "message": "Requesting $type$ logs from $server$.",
+        "description": "A debug message that displays in the log stream when the extension requests a specific type of log from a specific server.",
+        "placeholders": {
+            "type": {
+                "content": "$1",
+                "example": "Balancer request"
+            },
+            "server": {
+                "content": "$2",
+                "example": "bal-3"
+            }
+        }
+    },
+    "info_logTypeEnabled": {
+        "message": "Enabled streaming $type$ logs from $server$.",
+        "description": "A debug message that displays in the log stream when streaming a specific type of log from a specific server has been successfully enabled.",
+        "placeholders": {
+            "type": {
+                "content": "$1",
+                "example": "Balancer request"
+            },
+            "server": {
+                "content": "$2",
+                "example": "bal-3"
+            }
+        }
+    },
+    "info_keepalive": {
+        "message": "The log streaming connection is idle, but the connection remains open.",
+        "description": "A debug message that displays in the log stream when a keepalive message is confirmed."
+    },
     "info_connectionClosed": {
         "message": "The log streaming connection closed.",
         "description": "A debug message that displays in the log stream after a WebSocket connection is closed."
@@ -270,5 +326,14 @@
     "errors_wsError": {
         "message": "An error occurred in the log streaming connection.",
         "description": "An informational message that displays in the log stream when an error occurs in the WebSocket connection."
+    },
+    "errors_serverSideTrouble": {
+        "message": "A server-side log streaming error occurred: $error$",
+        "description": "A debug message that displays in the log stream when the server sends an error message.",
+        "placeholders": {
+            "error": {
+                "content": "$1"
+            }
+        }
     }
 }
