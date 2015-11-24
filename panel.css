@@ -22,7 +22,8 @@ body {
 }
 
 .options-page #controls {
-    margin: 35px auto;
+    margin: 35px auto 50px;
+    position: relative;
 }
 
 .options-page .stacked {
@@ -41,6 +42,30 @@ body {
     font-size: 20px;
     line-height: 1.6em;
     padding: 1px 8px;
+}
+
+.validation {
+    font-size: 12px;
+    margin: 4px 16px 0 0;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+}
+
+.validation.visible {
+    opacity: 1;
+}
+
+#credsChecking {
+    color: #444444;
+}
+
+#credsSuccess {
+    color: #266600;
+}
+
+#credsFailure {
+    color: #941403;
 }
 
 p.description {
