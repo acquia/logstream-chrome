@@ -362,7 +362,7 @@ window.addEventListener('load', function() {
     function sendRequestHeaderStatus() {
         if (onlyMe) {
             chrome.runtime.sendMessage('enableRequestHeaders', function(uuid) {
-                onlyMe = new RegExp('request_id="ac-ls-ce-' + uuid + "-[0-9a-f-]{36}");
+                onlyMe = new RegExp('request_id="ac-ls-ce-' + uuid + '-[0-9a-f-]{36}');
             });
         }
         else {
@@ -531,7 +531,7 @@ window.addEventListener('load', function() {
         },
         function(items) {
             logIfError('errors_getCachedDomainsFailed');
-            chrome.devtools.inspectedWindow.eval("window.location.hostname", function(hostname, error) {
+            chrome.devtools.inspectedWindow.eval('window.location.hostname', function(hostname, error) {
                 if (error || !hostname) {
                     showMessage(null, 'debug', t('errors_getHostname', error), 'extension-error', 'here');
                 }

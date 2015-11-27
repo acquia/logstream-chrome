@@ -1,0 +1,11 @@
+{
+    "name": "Logstream",
+    "version": "1.0.0",
+    "description": "View logs generated as you browse around your site.",
+    "readmeFilename": "README.md",
+    "devDependencies": {
+        "grunt": "~0.4.5",
+        "grunt-contrib-jshint": "~0.11.3",
+        "grunt-jscs": "~2.3.0"
+    }
+}
