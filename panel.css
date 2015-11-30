@@ -1,13 +1,17 @@
 html,
 body {
-    background-color: #FEFEFE;
-    color: #222222;
+    background-color: #f5f5f5; /* neutral.0 */
+    color: #333333; /* neutral.12 */
     font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
     font-size: 18px;
     line-height: 1.4em;
     margin: 0;
     padding: 0;
     text-rendering: optimizelegibility;
+}
+
+::selection {
+    background-color: #56c1f8; /* brand_primary.5 (blue) */
 }
 
 .options-page {
@@ -22,12 +26,14 @@ body {
 }
 
 .options-page #controls {
+    border-bottom-width: 0;
     margin: 35px auto 50px;
     position: relative;
+    width: auto;
 }
 
 .options-page .stacked {
-    width: 390px;
+    display: inline-flex;
 }
 
 .options-page fieldset {
@@ -38,10 +44,29 @@ body {
     font-size: 20px;
 }
 
-.options-page #controls input {
+.options-page input[type=text],
+.options-page input[type=password] {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.2);
+    color: #333333;
+    font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
     font-size: 20px;
     line-height: 1.6em;
     padding: 1px 8px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.options-page input[type=text]:focus,
+.options-page input[type=password]:focus {
+    border-color: #56c1f8; /* brand_primary.5 (blue) */
+    box-shadow: 0 1px 4px 2px rgba(14, 104, 167, 0.4); /* brand_primary.9 (blue) */
+    outline: 0 none;
+}
+
+.options-page #username {
+    margin-bottom: 6px;
 }
 
 .validation {
@@ -57,15 +82,15 @@ body {
 }
 
 #credsChecking {
-    color: #444444;
+    color: #444444; /* neutral.4 */
 }
 
 #credsSuccess {
-    color: #266600;
+    color: #266600; /* state_success.12 (green) */
 }
 
 #credsFailure {
-    color: #941403;
+    color: #941403; /* state_danger.10 (red) */
 }
 
 p.description {
@@ -79,13 +104,16 @@ p.warning {
 }
 
 p.error {
-    color: red;
-    margin: 1em 0 1.5em;
+    background-color: #fbf0ef; /* (very light red) */
+    border: 1px solid #941403; /* state_danger.10 (dark red) */
+    color: #c12317; /* state_danger.9 (red) */
+    margin: 1em 2em 1.5em;
+    padding: 1em;
     text-align: center;
 }
 
 .error a {
-    color: #9A2710; /* dark red */
+    color: #941403; /* state_danger.10 (dark red) */
 }
 
 .hidden {
@@ -93,15 +121,17 @@ p.error {
 }
 
 #form-wrapper {
-    background-color: rgba(212, 225, 230, 1); /* light blue */
-    border-bottom: 2px solid #676767;
+    background-color: #e7f0f4; /* light blue */
+    border-bottom: 12px solid #004f86; /* brand_primary.11 (dark blue) */
 }
 
 #controls {
+    border-bottom: 2px solid #018dc7; /* brand_primary.9 (blue) */
     display: table;
     margin: 0 auto;
     padding: 10px 0;
     text-align: center;
+    width: 100%;
 }
 
 fieldset {
@@ -131,15 +161,72 @@ label[for="logtypes"] {
     width: 120px;
 }
 
-.stacked select {
+.stacked select,
+select[multiple] {
+    background-color: #ffffff;
+    border: 1px solid #cccccc; /* neutral.3 */
+    box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.2);
+    color: #333333; /* neutral.12 */
+    font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
     width: 150px;
+    -webkit-font-smoothing: antialiased;
+}
+
+.stacked select {
+    border-radius: 4px;
+    box-sizing: content-box;
+    cursor: pointer;
+    height: 28px;
+    margin: 6px 0;
+}
+
+select[multiple] {
+    border-radius: 4px 0 0 4px; /* Scrollbars don't accept border-radius. */
+}
+
+select[multiple] option {
+    padding: 2px 6px;
+}
+
+input[type=checkbox] {
+    cursor: pointer;
+    font-size: 18px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type=checkbox]:hover,
+.stacked select:hover,
+select[multiple]:hover {
+    border-color: #56c1f8; /* brand_primary.5 (blue) */
+    box-shadow: 0px 1px 3px 1px rgba(14, 104, 167, 0.2); /* brand_primary.9 (blue) */
 }
 
 #connect {
+    background-color: #018dc7; /* brand_primary.9 (blue) */
+    border: 1px solid #0e68a7; /* brand_primary.10 (blue) */
+    border-radius: 4px;
+    box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.2);
+    color: #f5f5f5; /* neutral.0 */
+    cursor: pointer;
+    font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
     font-size: 21px;
-    font-weight: bold;
     margin: 20px 0;
-    padding: 3px 9px;
+    padding: 6px 12px;
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    -webkit-font-smoothing: antialiased;
+}
+
+#connect:hover {
+    background-color: #0e68a7; /* brand_primary.10 (blue) */
+    border: 1px solid #56c1f8; /* brand_primary.5 (blue) */
+    box-shadow: 0px 1px 3px 1px rgba(14, 104, 167, 0.2); /* brand_primary.9 (blue) */
+}
+
+#connect:focus {
+    box-shadow: 0 1px 4px 2px rgba(14, 104, 167, 0.4); /* brand_primary.9 (blue) */
+    outline: 0 none;
 }
 
 .message {
@@ -168,36 +255,36 @@ label[for="logtypes"] {
 }
 
 .received .type::before {
-    color: rgba(10, 140, 114, 1); /* turquoise */
+    color: #661078; /* brand_tertiary.11 (dark purple) */
     content: "\25c0 "; /* Unicode BLACK LEFT-POINTING TRIANGLE */
     margin-right: 5px;
 }
 
 .sent .type::before {
-    color: rgba(51, 10, 105, 1); /* purple */
+    color: #ca3bd5; /* brand_tertiary.7 (purple) */
     content: "\25b6 "; /* Unicode BLACK RIGHT-POINTING TRIANGLE */
     margin-right: 5px;
 }
 
 .here .type::before {
-    color: rgba(30, 75, 110, 1); /* prussian blue */
-    content: "\25be "; /* Unicode BLACK DOWN-POINTING SMALL TRIANGLE (the non-small one is too big) */
+    color: #018dc7; /* brand_primary.9 (blue) */
+    content: "\25bc "; /* Unicode BLACK DOWN-POINTING TRIANGLE (\25be looks more appropriately-sized on Windows) */
     margin-right: 5px;
 }
 
 .debug,
 .log {
-    background-color: rgba(238, 238, 238, 1); /* #eee */
+    background-color: #eeeeee; /* neutral.1 */
 }
 
 .extension-error {
-    background-color: rgba(255, 96, 96, 1); /* red */
+    background-color: #ffa3ae; /* state_danger.3 (light red) */
 }
 
 .apache-request.http-status-200,
 .bal-request.http-status-200,
 .varnish-request.http-status-200 {
-    background-color: rgba(192, 255, 192, 1); /* green */
+    background-color: #ecf7dd; /* state_success.1 (light green) */
 }
 
 .apache-error,
@@ -205,20 +292,20 @@ label[for="logtypes"] {
 .bal-request.http-status-500,
 .php-error,
 .varnish-request.http-status-500 {
-    background-color: rgba(255, 192, 192, 1); /* pink */
+    background-color: #ffd1da; /* state_danger.1 (pink) */
 }
 
 .apache-request.http-status-400,
 .bal-request.http-status-400,
 .varnish-request.http-status-400 {
-    background-color: rgba(255, 208, 144, 1); /* orange */
+    background-color: #ffdbbb; /* brand_secondary.2 (light orange) */
 }
 
 .drupal-request,
 .drupal-watchdog {
-    background-color: rgba(176, 224, 255, 1); /* blue */
+    background-color: #d6edf9; /* brand_primary.1 (light blue) */
 }
 
 .mysql-slow {
-    background-color: rgba(255, 232, 160, 1); /* yellow */
+    background-color: #fff59d; /* state_warning.3 (yellow) */
 }

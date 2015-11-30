@@ -371,6 +371,8 @@ window.addEventListener('load', function() {
     }
 
     chrome.storage.local.get({
+            'acquia-logstream.username': '',
+            'acquia-logstream.password': '',
             'acquia-logstream.sitename': '',
             'acquia-logstream.environment': '',
             'acquia-logstream.onlyme': onlyMe,
@@ -380,6 +382,10 @@ window.addEventListener('load', function() {
         },
         function(items) {
             logIfError('errors_getSettings');
+
+            if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
+                document.getElementById('credentials-error').classList.remove('hidden');
+            }
 
             onlyMe = items['acquia-logstream.onlyme'];
             document.getElementById('show-only-me').checked = !!onlyMe;

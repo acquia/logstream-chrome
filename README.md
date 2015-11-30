@@ -31,7 +31,6 @@ browse around your website and watch as the logs are generated in real time.
 ## TODO
 
 ### Medium priority
-- Use ADL styles: https://wiki.acquia.com/display/UX/ADL+Style+guidelines
 - Take screenshots/video, and embed in this README
 - Publish the extension and update the README to point to the extension on the Chrome Web Store
 
