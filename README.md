@@ -28,14 +28,14 @@ Finally, select the sitename and environment for the site you are
 investigating, then click the "Connect" button to start streaming logs. You can
 browse around your website and watch as the logs are generated in real time.
 
+## Video
+
+![Logstream video](logstream-video.gif)
+
 ## TODO
 
-### Medium priority
-- Take screenshots/video, and embed in this README
 - Publish the extension and update the README to point to the extension on the Chrome Web Store
-
-### Low priority
-- Allow filtering streamed logs using regex. (Should this also filter logs that have already been rendered?) This seems to be safe (the main attack vector is a DoS which isn't a big deal since why would a user do that to themselves?) but needs error handling since regexes will often fail if executed while being written (or if written poorly).
+- Allow filtering streamed logs using regex. (Should this also filter logs that have already been rendered?) This seems to be safe (the main attack vector is a DoS which isn't a big deal since why would a user do that to themselves?) but needs error handling since regexes will often fail if executed while being written (or if written poorly). Then re-record the video/gif.
 - Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional)
 - Make logTypes for extension-error-debug and extension-error-info and undefined
 - Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
