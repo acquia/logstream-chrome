@@ -75,6 +75,12 @@ window.addEventListener('load', function() {
             }
             userElement.value = items['acquia-logstream.username'];
             passElement.value = items['acquia-logstream.password'];
+            if (!items['acquia-logstream.username']) {
+                userElement.focus();
+            }
+            else if (!items['acquia-logstream.password']) {
+                passElement.focus();
+            }
             onChangeCreds();
         }
     );

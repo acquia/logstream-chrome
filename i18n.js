@@ -25,7 +25,7 @@ window.addEventListener('load', function() {
                 element.textContent = t(element.dataset.i18n);
             }
             else if (parameters[0] === 'innerHTML') {
-                element.innerHTML = t(element.dataset.i18n);
+                element.innerHTML = t(parameters[1]);
             }
             else {
                 element.setAttribute(parameters[0], t(parameters[1]));
