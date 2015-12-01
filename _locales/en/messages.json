@@ -57,6 +57,10 @@
         "message": "Show log types:",
         "description": "The label of the multi-select element on the log streaming panel for choosing which log types to display."
     },
+    "panel_regex": {
+        "message": "Filter:",
+        "description": "The label of the textfield on the log streaming panel that filters incoming messages to those that match the provided regular expression."
+    },
     "panel_onlyMe": {
         "message": "Show only logs I generate",
         "description": "The label of the checkbox on the log streaming panel that toggles whether to only show logs generated as a result of the current user's requests."
@@ -323,6 +327,24 @@
         "placeholders": {
             "error": {
                 "content": "$1"
+            }
+        }
+    },
+    "errors_regexDidNotCompile": {
+        "message": "Compiling the regex /$regex$/m failed. $name$: $message$",
+        "description": "An informational message that displays in the log stream when the contents of the Filter textfield are not a valid regular expression.",
+        "placeholders": {
+            "regex": {
+                "content": "$1",
+                "example": "127\\.0\\.0\\.1"
+            },
+            "name": {
+                "content": "$2",
+                "example": "SyntaxError"
+            },
+            "message": {
+                "content": "$3",
+                "example": "Invalid regular expression: /(/: Unterminated group"
             }
         }
     },

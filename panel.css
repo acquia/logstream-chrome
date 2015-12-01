@@ -44,25 +44,38 @@ body {
     font-size: 20px;
 }
 
-.options-page input[type=text],
-.options-page input[type=password] {
+input[type=text],
+input[type=password] {
     background-color: #ffffff;
     border: 1px solid #cccccc;
     border-radius: 4px;
     box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.2);
     color: #333333;
     font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
-    font-size: 20px;
+    font-size: 14px;
     line-height: 1.6em;
-    padding: 1px 8px;
+    padding: 3px 8px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.options-page input[type=text]:focus,
-.options-page input[type=password]:focus {
+input[type=text]:focus,
+input[type=password]:focus {
     border-color: #56c1f8; /* brand_primary.5 (blue) */
     box-shadow: 0 1px 4px 2px rgba(14, 104, 167, 0.4); /* brand_primary.9 (blue) */
     outline: 0 none;
+}
+
+.options-page input[type=text],
+.options-page input[type=password] {
+    font-size: 20px;
+    padding: 1px 8px;
+}
+
+#regex {
+    box-sizing: border-box;
+    margin: 6px 0 12px 12px;
+    width: 152px; /* Same size as the select elements. */
+    -webkit-font-smoothing: antialiased;
 }
 
 .options-page #username {
@@ -143,6 +156,10 @@ fieldset {
     vertical-align: middle;
 }
 
+.centered {
+    text-align: center;
+}
+
 label[for="logtypes"] {
     display: block;
 }
@@ -159,6 +176,14 @@ label[for="logtypes"] {
 .align-label-column {
     display: inline-block;
     width: 120px;
+}
+
+label[for=regex] .label {
+    width: auto;
+}
+
+label[for=show-only-me] {
+    padding: 2px 0 14px;
 }
 
 .stacked select,
@@ -203,6 +228,13 @@ select[multiple]:hover {
     box-shadow: 0px 1px 3px 1px rgba(14, 104, 167, 0.2); /* brand_primary.9 (blue) */
 }
 
+.stacked select:focus,
+select[multiple]:focus {
+    border-color: #56c1f8; /* brand_primary.5 (blue) */
+    box-shadow: 0 1px 4px 2px rgba(14, 104, 167, 0.4); /* brand_primary.9 (blue) */
+    outline: 0 none;
+}
+
 #connect {
     background-color: #018dc7; /* brand_primary.9 (blue) */
     border: 1px solid #0e68a7; /* brand_primary.10 (blue) */
@@ -212,7 +244,7 @@ select[multiple]:hover {
     cursor: pointer;
     font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
     font-size: 21px;
-    margin: 20px 0;
+    margin: 22px 0;
     padding: 6px 12px;
     transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
     -webkit-font-smoothing: antialiased;
@@ -308,4 +340,26 @@ select[multiple]:hover {
 
 .mysql-slow {
     background-color: #fff59d; /* state_warning.3 (yellow) */
+}
+
+/* Make things align more nicely. */
+@media (max-width: 900px) {
+    .centered {
+        padding-left: 108px; /* Width of the Cloud droplet fieldset for alignment (88px) + 20px normal fieldset padding */
+        text-align: start;
+    }
+    label[for=show-only-me] {
+        text-align: center;
+    }
+    label[for=regex] .label {
+        width: 120px;
+    }
+    .submit {
+        box-sizing: content-box;
+        text-align: center;
+        width: 150px;
+    }
+    #regex {
+        margin-left: 0;
+    }
 }

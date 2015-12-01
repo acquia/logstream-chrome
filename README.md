@@ -34,12 +34,13 @@ browse around your website and watch as the logs are generated in real time.
 
 ## TODO
 
+- Re-record the video/gif
 - Publish the extension and update the README to point to the extension on the Chrome Web Store
-- Allow filtering streamed logs using regex. (Should this also filter logs that have already been rendered?) This seems to be safe (the main attack vector is a DoS which isn't a big deal since why would a user do that to themselves?) but needs error handling since regexes will often fail if executed while being written (or if written poorly). Then re-record the video/gif.
 - Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional)
-- Make logTypes for extension-error-debug and extension-error-info and undefined
 - Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
 - Clean up the permissions in manifest.json
 - Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites. There don't seem to be any vanilla JS frameworks for this though.
 - Change setting storage to remove "acquia-logstream." from the key names - it's not necessary because chrome.storage already uses extension namespaces.
 - Clear my own chrome.storage for this extension so I don't leave old data sitting around.
+- Allow configuring the maximum number of log entries to keep
+- Make filtering by log type and regex and user-generation operate on logs after they're written to the DOM instead of when they're streamed

@@ -33,13 +33,17 @@
                 <select id="logtypes" multiple="true" size="3">
                 </select>
             </fieldset>
-            <fieldset class="stacked">
+            <fieldset class="stacked centered">
+                <label for="regex">
+                    <span class="label align-label-column" data-i18n="panel_regex">Filter:</span>
+                    <input autocapitalize="none" autocomplete="off" autocorrect="off" id="regex" inputmode="verbatim" maxlength="256" spellcheck="false" type="text" />
+                </label>
                 <label for="show-only-me">
                     <input id="show-only-me" type="checkbox" value="" checked />
                     <span class="label" data-i18n="panel_onlyMe">Show only logs I generate</span>
                 </label>
             </fieldset>
-            <fieldset>
+            <fieldset class="submit">
                 <input autofocus id="connect" type="button" value="Connect" data-i18n="value=panel_connect" />
             </fieldset>
         </form>
