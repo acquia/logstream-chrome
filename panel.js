@@ -85,24 +85,28 @@ var showMessage = (function() {
     /**
      * Log a message to the logstream devtools panel.
      *
-     * @param {String} datetime
-     *   The time at which the message was generated. If falsy, this is
-     *   generated as the current time.
-     * @param {String} type
-     *   The type of message. Must match a key of `logTypes`.
-     * @param {String} s
+     * @param {String} message
      *   The message to show.
+     * @param {String} [type='info']
+     *   The type of message. Must match a key of `logTypes`.
+     * @param {String} [datetime=new Date().toISOString()]
+     *   The time at which the message was generated as an ISO-8601 string or
+     *   some other string that can be parsed by `Date.parse()`. If falsy, this
+     *   is generated as the current time.
+     * @param {String} [...]
+     *   Additional parameters are added as classes to the log's DOM element.
      */
-    return function showMessage(datetime, type, s) {
+    return function showMessage(message, type, datetime) {
+        type = type ? type+'' : 'info';
         if (!logTypes[type].enabled) {
             return;
         }
-        var el = document.createElement('div'),
-            dt = document.createElement('span'),
-            ty = document.createElement('span'),
-            tx = document.createElement('span'),
+        var el = document.createElement('div'), // wrapper element
+            dt = document.createElement('span'), // datetime
+            ty = document.createElement('span'), // type of log
+            tx = document.createElement('span'), // text of log message
             args = Array.prototype.slice.call(arguments, 3);
-        args.push('message', 'collapsed', type || 'debug');
+        args.push('message', 'collapsed', type);
         el.classList.add.apply(el.classList, args);
         dt.classList.add('datetime');
         ty.classList.add('type');
@@ -113,8 +117,8 @@ var showMessage = (function() {
         catch(e) {
             dt.textContent = datetime;
         }
-        ty.textContent = logTypes[type+''].name;
-        tx.textContent = s;
+        ty.textContent = logTypes[type].name;
+        tx.textContent = message;
         el.appendChild(dt);
         el.appendChild(ty);
         el.innerHTML += tx.textContent;
@@ -135,7 +139,7 @@ var showMessage = (function() {
  */
 function logIfError(message) {
     if (typeof chrome.runtime.lastError === 'string') {
-        showMessage(null, 'debug', t(message, chrome.runtime.lastError), 'extension-error', 'here');
+        showMessage(t(message, chrome.runtime.lastError), 'debug', null, 'extension-error', 'here');
         return true;
     }
 }
@@ -243,23 +247,22 @@ window.addEventListener('load', function() {
         // Load from cache for speed.
         renderSitenameList(Object.keys(sitelist), null, lastSitename);
         // Refresh from Cloud.
-        showMessage(null, 'debug', t('info_refreshSitesStart'), 'sent');
+        showMessage(t('info_refreshSitesStart'), 'debug', null, 'sent');
         getCloudInfo(
             'sites',
             function(sites) {
                 if (!sites.length) {
-                    return showMessage(null, 'info', t('errors_noSites'), 'extension-error');
+                    return showMessage(t('errors_noSites'), 'info', null, 'extension-error');
                 }
                 renderSitenameList(sites, sitelist, lastSitename);
-                showMessage(null, 'debug', t('info_refreshSitesSuccess'), 'received');
+                showMessage(t('info_refreshSitesSuccess'), 'debug', null, 'received');
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
             },
             function(xhr) {
                 // This is marked as "info" instead of "debug" because something pretty fundamental is probably wrong if this request fails.
-                showMessage(null, 'info', t(
-                    'errors_refreshSitesFailed',
-                    [xhr.statusText, xhr.responseText]
-                ), 'extension-error');
+                showMessage(t('errors_refreshSitesFailed', [
+                    xhr.statusText, xhr.responseText,
+                ]), 'info', null, 'extension-error');
             }
         );
     }
@@ -341,24 +344,23 @@ window.addEventListener('load', function() {
         // Load from cache for speed.
         renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
         // Refresh from Cloud.
-        showMessage(null, 'debug', t('info_refreshEnvironmentsStart', sitename), 'sent');
+        showMessage(t('info_refreshEnvironmentsStart', sitename), 'debug', null, 'sent');
         getCloudInfo(
             'sites/' + sitename + '/envs',
             function(envs) {
                 if (!envs.length) {
-                    return showMessage(null, 'info', t('errors_noEnvironments', sitename), 'extension-error');
+                    return showMessage(t('errors_noEnvironments', sitename), 'info', null, 'extension-error');
                 }
                 renderEnvironmentList(envs.map(function(env) {
                     return env.name;
                 }), sitelist[sitename], lastEnvName);
                 chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
-                showMessage(null, 'debug', t('info_refreshEnvironmentsSuccess'), 'received');
+                showMessage(t('info_refreshEnvironmentsSuccess'), 'debug', null, 'received');
             },
             function(xhr) {
-                showMessage(null, 'debug', t(
-                    'errors_refreshEnvironmentsFailed',
-                    [sitename, xhr.statusText, xhr.responseText]
-                ), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
+                showMessage(t('errors_refreshEnvironmentsFailed', [
+                    sitename, xhr.statusText, xhr.responseText,
+                ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
             }
         );
     }
@@ -444,7 +446,7 @@ window.addEventListener('load', function() {
                         return;
                     }
 
-                    showMessage(null, 'info', t('info_connecting'));
+                    showMessage(t('info_connecting'));
                     getCloudInfo(
                         'sites/' + site + '/envs/' + env + '/logstream',
                         function(connectionInfo) {
@@ -452,10 +454,10 @@ window.addEventListener('load', function() {
                             connectButton.value = t('panel_disconnect');
                         },
                         function(xhr) {
-                            showMessage(null, 'info', t(
+                            showMessage(t(
                                 'errors_getLogStreamConnectionInfoFailed',
                                 [xhr.statusText, xhr.responseText]
-                            ), 'extension-error');
+                            ), 'info', null, 'extension-error');
                             try {
                                 ws.close();
                             }
@@ -506,10 +508,9 @@ window.addEventListener('load', function() {
                         chrome.storage.local.set({'acquia-logstream.domains': JSON.stringify(domains)});
                     },
                     function(xhr) {
-                        showMessage(null, 'debug', t(
-                            'errors_getDomainsFailed',
-                            [xhr.statusText, xhr.responseText]
-                        ), 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
+                        showMessage(t('errors_getDomainsFailed', [
+                            xhr.statusText, xhr.responseText,
+                        ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
                     }
                 );
             }
@@ -528,9 +529,9 @@ window.addEventListener('load', function() {
             regexFilter = thisValue ? new RegExp(thisValue, 'm') : '';
         }
         catch(e) {
-            showMessage(null, 'info', t('errors_regexDidNotCompile', [
+            showMessage(t('errors_regexDidNotCompile', [
                 thisValue, e.name, e.message,
-            ]), 'extension-error');
+            ]), 'info', null, 'extension-error');
         }
     });
 
@@ -561,7 +562,7 @@ window.addEventListener('load', function() {
             logIfError('errors_getCachedDomainsFailed');
             chrome.devtools.inspectedWindow.eval('window.location.hostname', function(hostname, error) {
                 if (error || !hostname) {
-                    showMessage(null, 'debug', t('errors_getHostname', error), 'extension-error', 'here');
+                    showMessage(t('errors_getHostname', error), 'debug', null, 'extension-error', 'here');
                 }
                 else {
                     var domains = JSON.parse(items['acquia-logstream.domains']);
@@ -642,34 +643,35 @@ function setupWebSocket(connectionInfo) {
             if (data.cmd === 'connected') {
                 // Streaming connection opened.
                 if (data.server.indexOf('logstream-') === 0) {
-                    showMessage(null, 'info', t('info_connected'));
+                    showMessage(t('info_connected'));
                 }
                 // Streaming from a specific server is enabled.
                 else {
-                    showMessage(null, 'debug', t('info_connectedToServer', data.server), 'received');
+                    showMessage(t('info_connectedToServer', data.server), 'debug', null, 'received');
                 }
             }
             else if (data.cmd === 'error') {
-                showMessage(null, 'debug', t('errors_serverSideTrouble', event.data), 'received', 'extension-error');
+                showMessage(t('errors_serverSideTrouble', event.data), 'debug', null, 'received', 'extension-error');
             }
             else if (data.cmd === 'success') {
                 // A keep-alive message succeeded.
                 if (data.msg.cmd === 'keepalive') {
-                    showMessage(null, 'debug', t('info_keepalive'), 'received');
+                    showMessage(t('info_keepalive'), 'debug', null, 'received');
                 }
                 // A log type was successfully enabled.
                 else if (data.msg.cmd === 'enable') {
-                    showMessage(null, 'debug', t(
-                        'info_logTypeEnabled',
-                        [logTypes[data.msg.type].name, data.server]
-                    ), 'received');
+                    showMessage(t('info_logTypeEnabled', [
+                        logTypes[data.msg.type].name, data.server,
+                    ]), 'debug', null, 'received');
                 }
                 else {
-                    showMessage(null, 'debug', event.data, 'received');
+                    showMessage(event.data, 'debug', null, 'received');
                 }
             }
             else if (data.cmd === 'available') {
-                showMessage(null, 'debug', t('info_logTypeAvailable', [data.display_type, data.server]), 'received');
+                showMessage(t('info_logTypeAvailable', [
+                    data.display_type, data.server,
+                ]), 'debug', null, 'received');
                 if (typeof logTypes[data.type] === 'undefined') {
                     logTypes[data.type] = new LogType(data.display_type);
                     var op = document.createElement('option');
@@ -684,7 +686,9 @@ function setupWebSocket(connectionInfo) {
                         type: data.type,
                         server: data.server,
                     });
-                    showMessage(null, 'debug', t('info_requestEnableLogType', [data.display_type, data.server]), 'sent');
+                    showMessage(t('info_requestEnableLogType', [
+                        data.display_type, data.server,
+                    ]), 'debug', null, 'sent');
                     ws.send(msg);
                 }
             }
@@ -697,31 +701,31 @@ function setupWebSocket(connectionInfo) {
                     // so we need to add a UTC timezone indicator.
                     data.disp_time += ' +0000';
                     if (typeof data.http_status === 'undefined') {
-                        showMessage(data.disp_time, data.log_type, data.text, 'log');
+                        showMessage(data.text, data.log_type, data.disp_time, 'log');
                     }
                     else {
-                        showMessage(data.disp_time, data.log_type, data.text, 'log', 'http-status-' +
+                        showMessage(data.text, data.log_type, data.disp_time, 'log', 'http-status-' +
                             (data.http_status < 400 ? 200 : 100 * Math.floor(data.http_status / 100))
                         );
                     }
                 }
             }
             else {
-                showMessage(null, 'debug', event.data, 'received');
+                showMessage(event.data, 'debug', null, 'received');
             }
         }
         catch(e) {
-            showMessage(null, 'debug', t('errors_logEventHandlingFailed', e.stack), 'extension-error', 'here');
+            showMessage(t('errors_logEventHandlingFailed', e.stack), 'debug', null, 'extension-error', 'here');
         }
     };
 
     ws.onclose = function() {
-        showMessage(null, 'debug', t('info_connectionClosed'), 'here');
+        showMessage(t('info_connectionClosed'), 'debug', null, 'here');
         document.getElementById('connect').value = t('panel_reconnect');
     };
 
     ws.onerror = function() {
-        showMessage(null, 'info', t('errors_wsError'), 'extension-error');
+        showMessage(t('errors_wsError'), 'info', null, 'extension-error');
     };
 
     return ws;

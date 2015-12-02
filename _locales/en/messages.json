@@ -70,7 +70,7 @@
         "description": "The default text of the Connect button on the log streaming panel."
     },
     "panel_disconnect": {
-        "message": "Stop streaming",
+        "message": "Disconnect",
         "description": "The text of the button on the log streaming panel that will cause logs to stop streaming when clicked."
     },
     "panel_reconnect": {

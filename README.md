@@ -36,7 +36,6 @@ browse around your website and watch as the logs are generated in real time.
 
 - Re-record the video/gif
 - Publish the extension and update the README to point to the extension on the Chrome Web Store
-- Change the order of the parameters to showMessage to s, type, datetime (to make type and datetime optional)
 - Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
 - Clean up the permissions in manifest.json
 - Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites. There don't seem to be any vanilla JS frameworks for this though.
