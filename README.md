@@ -36,8 +36,6 @@ browse around your website and watch as the logs are generated in real time.
 
 - Re-record the video/gif
 - Publish the extension and update the README to point to the extension on the Chrome Web Store
-- Change setting storage to remove "acquia-logstream." from the key names - it's not necessary because chrome.storage already uses extension namespaces.
-- Clear my own chrome.storage for this extension so I don't leave old data sitting around.
 - Allow configuring the maximum number of log entries to keep: chrome.storage.sync.get({ 'elemcount_max': 100 } ...)
 
 - Make filtering by log type and regex and user-generation operate on logs after they're written to the DOM instead of when they're streamed

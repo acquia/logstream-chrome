@@ -169,30 +169,25 @@ function logIfError(message) {
 }
 
 function getCloudInfo(path, success, failure) {
-    chrome.storage.local.get({
-            'acquia-logstream.username': '',
-            'acquia-logstream.password': '',
-        },
-        function(items) {
-            logIfError('errors_getCredentialsFailed');
+    chrome.storage.local.get({ username: '', password: '' }, function(items) {
+        logIfError('errors_getCredentialsFailed');
 
-            chrome.runtime.sendMessage({
-                    method: 'getCloudInfo',
-                    user: items['acquia-logstream.username'],
-                    pass: items['acquia-logstream.password'],
-                    path: path,
-                },
-                function(response) {
-                    if (response.status === 200 || response.status === 204 || response.status === 304) {
-                        success(JSON.parse(response.responseText));
-                    }
-                    else {
-                        failure(response);
-                    }
+        chrome.runtime.sendMessage({
+                method: 'getCloudInfo',
+                user: items.username,
+                pass: items.password,
+                path: path,
+            },
+            function(response) {
+                if (response.status === 200 || response.status === 204 || response.status === 304) {
+                    success(JSON.parse(response.responseText));
                 }
-            );
-        }
-    );
+                else {
+                    failure(response);
+                }
+            }
+        );
+    });
 }
 
 /**
@@ -378,7 +373,7 @@ function resetSitenameList(sitelist, lastSitename) {
             }
             renderSitenameList(sites, sitelist, lastSitename);
             showMessage(t('info_refreshSitesSuccess'), 'debug', null, 'received');
-            chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
+            chrome.storage.local.set({ sitelist: JSON.stringify(sitelist) });
         },
         function(xhr) {
             // This is marked as "info" instead of "debug" because something pretty fundamental is probably wrong if this request fails.
@@ -476,7 +471,7 @@ function resetEnvironmentList(sitename, sitelist, lastEnvName) {
             renderEnvironmentList(envs.map(function(env) {
                 return env.name;
             }), sitelist[sitename], lastEnvName);
-            chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
+            chrome.storage.local.set({ sitelist: JSON.stringify(sitelist) });
             showMessage(t('info_refreshEnvironmentsSuccess'), 'debug', null, 'received');
         },
         function(xhr) {
@@ -499,27 +494,27 @@ function sendRequestHeaderStatus() {
 }
 
 chrome.storage.local.get({
-        'acquia-logstream.username': '',
-        'acquia-logstream.password': '',
-        'acquia-logstream.sitename': '',
-        'acquia-logstream.environment': '',
-        'acquia-logstream.onlyme': onlyMe,
-        'acquia-logstream.logtypes': JSON.stringify(logTypes),
+        username: '',
+        password: '',
+        sitename: '',
+        environment: '',
+        onlyme: onlyMe,
+        logtypes: JSON.stringify(logTypes),
         // Sitelist format is {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
-        'acquia-logstream.sitelist': JSON.stringify({}),
+        sitelist: JSON.stringify({}),
     },
     function(items) {
         logIfError('errors_getSettings');
 
-        if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
+        if (!items.username || !items.password) {
             document.getElementById('credentials-error').classList.remove('hidden');
         }
 
-        onlyMe = items['acquia-logstream.onlyme'];
+        onlyMe = items.onlyme;
         document.getElementById('show-only-me').checked = !!onlyMe;
         sendRequestHeaderStatus();
 
-        logTypes = JSON.parse(items['acquia-logstream.logtypes']);
+        logTypes = JSON.parse(items.logtypes);
         var logOptions = document.createDocumentFragment();
         for (var type in logTypes) {
             if (logTypes.hasOwnProperty(type) && logTypes[type].allowToggling) {
@@ -534,7 +529,7 @@ chrome.storage.local.get({
         }
         document.getElementById('logtypes').appendChild(logOptions);
 
-        var sitelist = JSON.parse(items['acquia-logstream.sitelist']),
+        var sitelist = JSON.parse(items.sitelist),
             lastSite;
 
         // Update the environment list when the site changes.
@@ -544,11 +539,11 @@ chrome.storage.local.get({
                 return;
             }
             lastSite = sitename;
-            resetEnvironmentList(sitename, sitelist, items['acquia-logstream.environment']);
+            resetEnvironmentList(sitename, sitelist, items.environment);
         });
 
         // Update the sitename list.
-        resetSitenameList(sitelist, items['acquia-logstream.sitename']);
+        resetSitenameList(sitelist, items.sitename);
     }
 );
 
@@ -603,7 +598,7 @@ document.getElementById('connect').addEventListener('click', (function() {
 
 // Save the most recent sitename.
 document.getElementById('sitename').addEventListener('change', function() {
-    chrome.storage.local.set({'acquia-logstream.sitename': this.value});
+    chrome.storage.local.set({ sitename: this.value });
 });
 
 // Save the most recent environment.
@@ -621,7 +616,7 @@ document.getElementById('environment').addEventListener('change', (function() {
         if (logIfError('errors_getCachedDomainsFailed')) {
             return;
         }
-        var domains = JSON.parse(items['acquia-logstream.domains']),
+        var domains = JSON.parse(items.domains),
             sitename = sitenameElement.value,
             envName = environmentElement.value;
         getCloudInfo(
@@ -633,7 +628,7 @@ document.getElementById('environment').addEventListener('change', (function() {
                         environment: envName,
                     };
                 }
-                chrome.storage.local.set({'acquia-logstream.domains': JSON.stringify(domains)});
+                chrome.storage.local.set({ domains: JSON.stringify(domains) });
             },
             onGetDomainsFailure
         );
@@ -641,10 +636,10 @@ document.getElementById('environment').addEventListener('change', (function() {
 
     return function() {
         if (sitenameElement.value && environmentElement.value) {
-            chrome.storage.local.set({'acquia-logstream.environment': environmentElement.value});
+            chrome.storage.local.set({ environment: environmentElement.value });
             // Cache the list of domains for this environment.
             // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
-            chrome.storage.local.get({ 'acquia-logstream.domains': JSON.stringify({}) }, onGetDomains);
+            chrome.storage.local.get({ domains: JSON.stringify({}) }, onGetDomains);
         }
     };
 })());
@@ -670,7 +665,7 @@ document.getElementById('regex').addEventListener('keyup', function() {
 // Change whether messages are limited to only the ones generated by the current user when the checkbox value changes.
 document.getElementById('show-only-me').addEventListener('change', function() {
     onlyMe = this.checked;
-    chrome.storage.local.set({'acquia-logstream.onlyme': this.checked});
+    chrome.storage.local.set({ onlyme: this.checked });
     sendRequestHeaderStatus();
 });
 
@@ -682,33 +677,29 @@ document.getElementById('logtypes').addEventListener('change', function(event) {
             logTypes[o[i].value].enabled = o[i].selected;
         }
     }
-    chrome.storage.local.set({'acquia-logstream.logtypes': JSON.stringify(logTypes)});
+    chrome.storage.local.set({ logtypes: JSON.stringify(logTypes) });
 });
 
 // Check to see if the current domain is associated with a cached sitename and environment, and if so, automatically pick them.
-chrome.storage.local.get({
-        // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
-        'acquia-logstream.domains': JSON.stringify({}),
-    },
-    function(items) {
-        logIfError('errors_getCachedDomainsFailed');
-        chrome.devtools.inspectedWindow.eval('window.location.hostname', function(hostname, error) {
-            if (error || !hostname) {
-                showMessage(t('errors_getHostname', error), 'debug', null, 'extension-error', 'here');
-            }
-            else {
-                var domains = JSON.parse(items['acquia-logstream.domains']);
-                for (var domain in domains) {
-                    if (domains.hasOwnProperty(domain) && domain === hostname) {
-                        domainMatchedSitename = domains[domain].sitename;
-                        domainMatchedEnvironment = domains[domain].environment;
-                        return;
-                    }
+// Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+chrome.storage.local.get({ domains: JSON.stringify({}) }, function(items) {
+    logIfError('errors_getCachedDomainsFailed');
+    chrome.devtools.inspectedWindow.eval('window.location.hostname', function(hostname, error) {
+        if (error || !hostname) {
+            showMessage(t('errors_getHostname', error), 'debug', null, 'extension-error', 'here');
+        }
+        else {
+            var domains = JSON.parse(items.domains);
+            for (var domain in domains) {
+                if (domains.hasOwnProperty(domain) && domain === hostname) {
+                    domainMatchedSitename = domains[domain].sitename;
+                    domainMatchedEnvironment = domains[domain].environment;
+                    return;
                 }
             }
-        });
-    }
-);
+        }
+    });
+});
 
 // Expand log message when clicked
 document.getElementById('content').addEventListener('click', function(event) {
@@ -722,21 +713,21 @@ chrome.storage.onChanged.addListener((function() {
     function onCredentialsChanged(items) {
         logIfError('errors_getCredentialsFailed');
 
-        if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
+        if (!items.username || !items.password) {
             return document.getElementById('credentials-error').classList.remove('hidden');
         }
         document.getElementById('credentials-error').classList.add('hidden');
 
-        resetSitenameList({}, items['acquia-logstream.sitename']);
+        resetSitenameList({}, items.sitename);
     }
 
     return function(changes, namespace) {
         for (var key in changes) {
-            if (namespace === 'local' && (key === 'acquia-logstream.username' || key === 'acquia-logstream.password')) {
+            if (namespace === 'local' && (key === 'username' || key === 'password')) {
                 return chrome.storage.local.get({
-                    'acquia-logstream.username': '',
-                    'acquia-logstream.password': '',
-                    'acquia-logstream.sitename': '',
+                    username: '',
+                    password: '',
+                    sitename: '',
                 }, onCredentialsChanged);
             }
         }

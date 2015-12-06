@@ -65,34 +65,29 @@ window.addEventListener('load', function() {
         t = chrome.i18n.getMessage;
 
     // Set username and password to their last values.
-    chrome.storage.local.get({
-            'acquia-logstream.username': '',
-            'acquia-logstream.password': '',
-        },
-        function(items) {
-            if (typeof chrome.runtime.lastError === 'string') {
-                alert(t('errors_getCredentialsFailed', chrome.runtime.lastError));
-            }
-            userElement.value = items['acquia-logstream.username'];
-            passElement.value = items['acquia-logstream.password'];
-            if (!items['acquia-logstream.username']) {
-                userElement.focus();
-            }
-            else if (!items['acquia-logstream.password']) {
-                passElement.focus();
-            }
-            onChangeCreds();
+    chrome.storage.local.get({ username: '', password: '' }, function(items) {
+        if (typeof chrome.runtime.lastError === 'string') {
+            alert(t('errors_getCredentialsFailed', chrome.runtime.lastError));
         }
-    );
+        userElement.value = items.username;
+        passElement.value = items.password;
+        if (!items.username) {
+            userElement.focus();
+        }
+        else if (!items.password) {
+            passElement.focus();
+        }
+        onChangeCreds();
+    });
 
     // Save the most recent username.
     userElement.addEventListener('blur', function() {
-        chrome.storage.local.set({'acquia-logstream.username': this.value});
+        chrome.storage.local.set({ username: this.value });
     });
 
     // Save the most recent password.
     passElement.addEventListener('blur', function() {
-        chrome.storage.local.set({'acquia-logstream.password': this.value});
+        chrome.storage.local.set({ password: this.value});
     });
 
     // Check if the user's credentials successfully authenticate to Acquia.
