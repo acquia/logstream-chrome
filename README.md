@@ -36,10 +36,9 @@ browse around your website and watch as the logs are generated in real time.
 
 - Re-record the video/gif
 - Publish the extension and update the README to point to the extension on the Chrome Web Store
-- Clean up code (split up panels.js if possible, split up big functions, try to only load things after window.onload, see if the reset/render functions can be merged since they do basically the same things)
 - Change setting storage to remove "acquia-logstream." from the key names - it's not necessary because chrome.storage already uses extension namespaces.
 - Clear my own chrome.storage for this extension so I don't leave old data sitting around.
-- Allow configuring the maximum number of log entries to keep
+- Allow configuring the maximum number of log entries to keep: chrome.storage.sync.get({ 'elemcount_max': 100 } ...)
 
 - Make filtering by log type and regex and user-generation operate on logs after they're written to the DOM instead of when they're streamed
 - Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites. There don't seem to be any vanilla JS frameworks for this though.

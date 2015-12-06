@@ -289,19 +289,25 @@ select[multiple]:focus {
 .received .type::before {
     color: #661078; /* brand_tertiary.11 (dark purple) */
     content: "\25c0 "; /* Unicode BLACK LEFT-POINTING TRIANGLE */
-    margin-right: 5px;
 }
 
 .sent .type::before {
     color: #ca3bd5; /* brand_tertiary.7 (purple) */
     content: "\25b6 "; /* Unicode BLACK RIGHT-POINTING TRIANGLE */
-    margin-right: 5px;
 }
 
 .here .type::before {
     color: #018dc7; /* brand_primary.9 (blue) */
     content: "\25bc "; /* Unicode BLACK DOWN-POINTING TRIANGLE (\25be looks more appropriately-sized on Windows) */
+}
+
+.received .type::before,
+.sent .type::before,
+.here .type::before {
+    display: inline-block;
     margin-right: 5px;
+    text-align: center;
+    width: 20px;
 }
 
 .debug,

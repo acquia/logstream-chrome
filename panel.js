@@ -1,9 +1,30 @@
-/**
+/*
  * Streams logs.
  *
  * By Isaac Sukin (IceCreamYou).
  */
-(function() {
+
+/**
+ * Tear down.
+ */
+window.addEventListener('unload', function() {
+    // Stop sending the X-REQUEST-ID header since we're done using it.
+    chrome.runtime.sendMessage('disableRequestHeaders');
+});
+
+/**
+ * Set up.
+ */
+window.addEventListener('load', function() {
+// The rest of this file is inside this function, so it is intentionally
+// un-indented for readability.
+
+'use strict';
+
+// Don't allow submitting the form.
+document.getElementById('controls').addEventListener('submit', function(event) {
+    event.preventDefault();
+});
 
 // Shortcut for translation.
 var t = chrome.i18n.getMessage;
@@ -31,23 +52,18 @@ var regexFilter = '';
  *     the list of log types in the UI so that it can be enabled and disabled.
  *   - `{Boolean} [enabled=true]`: Whether logs of this type will be shown in
  *     the stream or not by default.
- *   - `{String} name`: The name of the log type.
+ *   - `{String} name`: The human-friendly, translated name of the log type.
  */
 function LogType(options) {
-    if (typeof options === 'string') {
-        this.name = options;
-        options = {};
-    }
-    else {
-        this.name = options.name;
-    }
+    this.name = typeof options === 'string' ? options : options.name;
     this.allowToggling = typeof options.allowToggling === 'undefined' ? true : options.allowToggling;
     this.enabled = typeof options.enabled === 'undefined' ? true : options.enabled;
 }
 
 // Holds information about the available log types. These defaults are the ones
 // that we expect to be available. The list will be updated based on what the
-// servers advertise.
+// servers advertise. The keys are semantically meaningful because they match
+// keys sent from the servers and are used in CSS classes.
 var logTypes = {
     'apache-error':    new LogType(t('logType_apacheError')),
     'apache-request':  new LogType(t('logType_apacheRequest')),
@@ -180,452 +196,6 @@ function getCloudInfo(path, success, failure) {
 }
 
 /**
- * Tear down.
- */
-window.addEventListener('unload', function() {
-    chrome.runtime.sendMessage('disableRequestHeaders');
-});
-
-/**
- * Set up.
- */
-window.addEventListener('load', function() {
-    // Don't allow submitting the form.
-    document.getElementById('controls').addEventListener('submit', function(event) {
-        event.preventDefault();
-    });
-
-    // Populates the options of the sitename select list.
-    // If the `sitelist` parameter is not set, the `sites` list is from the cache.
-    // Otherwise, it is from the Cloud API.
-    function renderSitenameList(sites, sitelist, lastSitename) {
-        if (!sites.length || (sites.length === 1 && sites[0] === 'lastUpdated')) {
-            return;
-        }
-        // Add the list of available sites as <option>s.
-        var sitenameElement = document.getElementById('sitename'),
-            siteOptions = document.createDocumentFragment(),
-            domainMatch = '',
-            lastSelection = '',
-            now = Date.now(),
-            op;
-        sites.sort();
-        for (var i = 0, l = sites.length; i < l; i++) {
-            var sitename = sites[i];
-            // Sitenames are all lower case by convention,
-            // so there shouldn't be any environments named lastUpdated.
-            if (sitename === 'lastUpdated') {
-                continue;
-            }
-            op = document.createElement('option');
-            op.value = sitename;
-            op.textContent = sitename;
-            siteOptions.appendChild(op);
-            if (sitename === lastSitename) {
-                lastSelection = sitename;
-            }
-            if (sitename === domainMatchedSitename) {
-                domainMatch = sitename;
-            }
-            if (sitelist && typeof sitelist === 'object') {
-                if (typeof sitelist[sitename] === 'undefined') {
-                    sitelist[sitename] = {lastUpdated: now};
-                }
-                else {
-                    sitelist[sitename].lastUpdated = now;
-                }
-            }
-        }
-        sitenameElement.innerHTML = '';
-        sitenameElement.appendChild(siteOptions);
-        sitenameElement.value = domainMatch || lastSelection || sitenameElement.options[0].value;
-        sitenameElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
-        if (sitelist) {
-            // Remove cached sites that aren't in the newly retrieved list.
-            for (var site in sitelist) {
-                if (sitelist.hasOwnProperty(site) && typeof sitelist[site] === 'object' && sitelist[site].lastUpdated !== now) {
-                    delete sitelist[site];
-                }
-            }
-        }
-    }
-
-    // Populates the options of the sitename select list from the cache and remotely.
-    function resetSitenameList(sitelist, lastSitename) {
-        // Load from cache for speed.
-        renderSitenameList(Object.keys(sitelist), null, lastSitename);
-        // Refresh from Cloud.
-        showMessage(t('info_refreshSitesStart'), 'debug', null, 'sent');
-        getCloudInfo(
-            'sites',
-            function(sites) {
-                if (!sites.length) {
-                    return showMessage(t('errors_noSites'), 'info', null, 'extension-error');
-                }
-                renderSitenameList(sites, sitelist, lastSitename);
-                showMessage(t('info_refreshSitesSuccess'), 'debug', null, 'received');
-                chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
-            },
-            function(xhr) {
-                // This is marked as "info" instead of "debug" because something pretty fundamental is probably wrong if this request fails.
-                showMessage(t('errors_refreshSitesFailed', [
-                    xhr.statusText, xhr.responseText,
-                ]), 'info', null, 'extension-error');
-            }
-        );
-    }
-
-    // Populates the options of the environment select list.
-    // If the `site` parameter is not set, the `envs` list is from the cache.
-    // Otherwise, it is from the Cloud API.
-    function renderEnvironmentList(envs, site, lastEnvName) {
-        if (!envs.length || (envs.length === 1 && envs[0] === 'lastUpdated')) {
-            return;
-        }
-        // Add the list of available environments as <option>s.
-        var environmentElement = document.getElementById('environment'),
-            envOptions = document.createDocumentFragment(),
-            prod = '',
-            dev = '',
-            domainMatch = '',
-            lastSelection = '',
-            now = Date.now(),
-            op,
-            envOrder = ['dev', 'test', 'prod', 'live01', 'ra'];
-        envs.sort(function(a, b) {
-            if (a === b) return 0;
-            for (var i = 0; i < envOrder.length; i++) {
-                if (a === envOrder[i]) return -1;
-                else if (b === envOrder[i]) return 1;
-            }
-            return a.localeCompare(b);
-        });
-        for (var i = 0, l = envs.length; i < l; i++) {
-            var envName = envs[i];
-            // Environment names are all lower case by convention,
-            // so there shouldn't be any environments named lastUpdated.
-            if (envName === 'lastUpdated') {
-                continue;
-            }
-            op = document.createElement('option');
-            op.value = envName;
-            op.textContent = envName;
-            envOptions.appendChild(op);
-            // 'live01' is the default name of prod in ACSF
-            if (envName === 'prod' || envName.indexOf('live01') === 0) {
-                prod = envName;
-            }
-            if (envName === 'dev') {
-                dev = envName;
-            }
-            if (envName === lastEnvName) {
-                lastSelection = envName;
-            }
-            if (envName === domainMatchedEnvironment) {
-                domainMatch = envName;
-            }
-            if (site && typeof site === 'object') {
-                if (typeof site[envName] === 'undefined') {
-                    site[envName] = {lastUpdated: now};
-                }
-                else {
-                    site[envName].lastUpdated = now;
-                }
-            }
-        }
-        environmentElement.innerHTML = '';
-        environmentElement.appendChild(envOptions);
-        environmentElement.value = domainMatch || lastSelection || prod || dev || environmentElement.options[0].value;
-        environmentElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
-        if (site) {
-            // Remove cached environments that aren't in the newly retrieved list.
-            for (var env in site) {
-                if (site.hasOwnProperty(env) && typeof site[env] === 'object' && site[env].lastUpdated !== now) {
-                    delete site[env];
-                }
-            }
-        }
-    }
-
-    // Populates the options of the environment select list from the cache and remotely.
-    function resetEnvironmentList(sitename, sitelist, lastEnvName) {
-        // Load from cache for speed.
-        renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
-        // Refresh from Cloud.
-        showMessage(t('info_refreshEnvironmentsStart', sitename), 'debug', null, 'sent');
-        getCloudInfo(
-            'sites/' + sitename + '/envs',
-            function(envs) {
-                if (!envs.length) {
-                    return showMessage(t('errors_noEnvironments', sitename), 'info', null, 'extension-error');
-                }
-                renderEnvironmentList(envs.map(function(env) {
-                    return env.name;
-                }), sitelist[sitename], lastEnvName);
-                chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
-                showMessage(t('info_refreshEnvironmentsSuccess'), 'debug', null, 'received');
-            },
-            function(xhr) {
-                showMessage(t('errors_refreshEnvironmentsFailed', [
-                    sitename, xhr.statusText, xhr.responseText,
-                ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
-            }
-        );
-    }
-
-    function sendRequestHeaderStatus() {
-        if (onlyMe) {
-            chrome.runtime.sendMessage('enableRequestHeaders', function(uuid) {
-                onlyMe = new RegExp('request_id="ac-ls-ce-' + uuid + '-[0-9a-f-]{36}');
-            });
-        }
-        else {
-            chrome.runtime.sendMessage('disableRequestHeaders');
-        }
-    }
-
-    chrome.storage.local.get({
-            'acquia-logstream.username': '',
-            'acquia-logstream.password': '',
-            'acquia-logstream.sitename': '',
-            'acquia-logstream.environment': '',
-            'acquia-logstream.onlyme': onlyMe,
-            'acquia-logstream.logtypes': JSON.stringify(logTypes),
-            // Sitelist format is {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
-            'acquia-logstream.sitelist': JSON.stringify({}),
-        },
-        function(items) {
-            logIfError('errors_getSettings');
-
-            if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
-                document.getElementById('credentials-error').classList.remove('hidden');
-            }
-
-            onlyMe = items['acquia-logstream.onlyme'];
-            document.getElementById('show-only-me').checked = !!onlyMe;
-            sendRequestHeaderStatus();
-
-            logTypes = JSON.parse(items['acquia-logstream.logtypes']);
-            var logOptions = document.createDocumentFragment();
-            for (var type in logTypes) {
-                if (logTypes.hasOwnProperty(type) && logTypes[type].allowToggling) {
-                    var op = document.createElement('option');
-                    if (logTypes[type].enabled) {
-                        op.setAttribute('selected', '');
-                    }
-                    op.value = type;
-                    op.textContent = logTypes[type].name;
-                    logOptions.appendChild(op);
-                }
-            }
-            document.getElementById('logtypes').appendChild(logOptions);
-
-            var sitelist = JSON.parse(items['acquia-logstream.sitelist']),
-                lastSite;
-
-            // Update the environment list when the site changes.
-            document.getElementById('sitename').addEventListener('change', function() {
-                var sitename = this.value;
-                if (sitename === lastSite || !sitename) {
-                    return;
-                }
-                lastSite = sitename;
-                resetEnvironmentList(sitename, sitelist, items['acquia-logstream.environment']);
-            });
-
-            // Update the sitename list.
-            resetSitenameList(sitelist, items['acquia-logstream.sitename']);
-
-            // (Dis)connect when the button is clicked.
-            var ws;
-            document.getElementById('connect').addEventListener('click', function(event) {
-                event.preventDefault();
-                if (typeof ws === 'undefined' || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
-                    var site = document.getElementById('sitename').value,
-                        env  = document.getElementById('environment').value,
-                        connectButton = this;
-
-                    if (!site) {
-                        alert(t('errors_invalidSitename'));
-                        return;
-                    }
-                    if (!env) {
-                        alert(t('errors_invalidEnvironment'));
-                        return;
-                    }
-
-                    showMessage(t('info_connecting'));
-                    getCloudInfo(
-                        'sites/' + site + '/envs/' + env + '/logstream',
-                        function(connectionInfo) {
-                            ws = setupWebSocket(connectionInfo);
-                            connectButton.value = t('panel_disconnect');
-                        },
-                        function(xhr) {
-                            showMessage(t(
-                                'errors_getLogStreamConnectionInfoFailed',
-                                [xhr.statusText, xhr.responseText]
-                            ), 'info', null, 'extension-error');
-                            try {
-                                ws.close();
-                            }
-                            catch(e) {}
-                        }
-                    );
-                }
-                else { // ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING
-                    ws.close();
-                    this.value = t('panel_reconnect');
-                }
-            });
-        }
-    );
-
-    // Save the most recent sitename.
-    document.getElementById('sitename').addEventListener('change', function() {
-        chrome.storage.local.set({'acquia-logstream.sitename': this.value});
-    });
-
-    // Save the most recent environment.
-    document.getElementById('environment').addEventListener('change', function() {
-        var sitename = document.getElementById('sitename').value,
-            envName = this.value;
-        if (!sitename || !envName) {
-            return;
-        }
-        chrome.storage.local.set({'acquia-logstream.environment': envName});
-        // Cache the list of domains for this environment.
-        chrome.storage.local.get({
-                // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
-                'acquia-logstream.domains': JSON.stringify({}),
-            },
-            function(items) {
-                if (logIfError('errors_getCachedDomainsFailed')) {
-                    return;
-                }
-                var domains = JSON.parse(items['acquia-logstream.domains']);
-                getCloudInfo(
-                    'sites/' + sitename + '/envs/' + envName + '/domains',
-                    function(results) {
-                        for (var i = 0, l = results.length; i < l; i++) {
-                            domains[results[i].name] = {
-                                sitename: sitename,
-                                environment: envName,
-                            };
-                        }
-                        chrome.storage.local.set({'acquia-logstream.domains': JSON.stringify(domains)});
-                    },
-                    function(xhr) {
-                        showMessage(t('errors_getDomainsFailed', [
-                            xhr.statusText, xhr.responseText,
-                        ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
-                    }
-                );
-            }
-        );
-    });
-
-    // Update the regex filter.
-    var lastRegexValue = '';
-    document.getElementById('regex').addEventListener('keyup', function() {
-        var thisValue = this.value;
-        if (thisValue === lastRegexValue) {
-            return;
-        }
-        lastRegexValue = thisValue;
-        try {
-            regexFilter = thisValue ? new RegExp(thisValue, 'm') : '';
-        }
-        catch(e) {
-            showMessage(t('errors_regexDidNotCompile', [
-                thisValue, e.name, e.message,
-            ]), 'info', null, 'extension-error');
-        }
-    });
-
-    // Change whether messages are limited to only the ones generated by the current user when the checkbox value changes.
-    document.getElementById('show-only-me').addEventListener('change', function() {
-        onlyMe = this.checked;
-        chrome.storage.local.set({'acquia-logstream.onlyme': this.checked});
-        sendRequestHeaderStatus();
-    });
-
-    // Set which log types to filter when the "Show log types" option changes.
-    document.getElementById('logtypes').addEventListener('change', function(event) {
-        var o = event.target.options;
-        for (var i = 0, l = o.length; i < l; i++) {
-            if (typeof logTypes[o[i].value] === 'object') {
-                logTypes[o[i].value].enabled = o[i].selected;
-            }
-        }
-        chrome.storage.local.set({'acquia-logstream.logtypes': JSON.stringify(logTypes)});
-    });
-
-    // Check to see if the current domain is associated with a cached sitename and environment, and if so, automatically pick them.
-    chrome.storage.local.get({
-            // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
-            'acquia-logstream.domains': JSON.stringify({}),
-        },
-        function(items) {
-            logIfError('errors_getCachedDomainsFailed');
-            chrome.devtools.inspectedWindow.eval('window.location.hostname', function(hostname, error) {
-                if (error || !hostname) {
-                    showMessage(t('errors_getHostname', error), 'debug', null, 'extension-error', 'here');
-                }
-                else {
-                    var domains = JSON.parse(items['acquia-logstream.domains']);
-                    for (var domain in domains) {
-                        if (domains.hasOwnProperty(domain) && domain === hostname) {
-                            domainMatchedSitename = domains[domain].sitename;
-                            domainMatchedEnvironment = domains[domain].environment;
-                            return;
-                        }
-                    }
-                }
-            });
-        }
-    );
-
-    // Expand log message when clicked
-    document.getElementById('content').addEventListener('click', function(event) {
-        if (event.target.classList.contains('message')) {
-            event.target.classList.remove('collapsed');
-        }
-    });
-
-    // Update the credentials error, sitename list, and environment list when the Acquia Cloud credentials change.
-    function onCredentialsChanged(items) {
-        logIfError('errors_getCredentialsFailed');
-
-        if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
-            return document.getElementById('credentials-error').classList.remove('hidden');
-        }
-        document.getElementById('credentials-error').classList.add('hidden');
-
-        resetSitenameList({}, items['acquia-logstream.sitename']);
-    }
-    chrome.storage.onChanged.addListener(function(changes, namespace) {
-        for (var key in changes) {
-            if (namespace === 'local' && (key === 'acquia-logstream.username' || key === 'acquia-logstream.password')) {
-                return chrome.storage.local.get({
-                    'acquia-logstream.username': '',
-                    'acquia-logstream.password': '',
-                    'acquia-logstream.sitename': '',
-                }, onCredentialsChanged);
-            }
-        }
-    });
-
-    // Open the settings when a settings link is clicked.
-    document.getElementById('controls').addEventListener('click', function(event) {
-        if (event.target.classList.contains('options-link')) {
-            event.preventDefault();
-            chrome.runtime.sendMessage('openOptionsPage');
-        }
-    });
-});
-
-/**
  * Sets up the WebSocket connection to stream logs from Acquia Cloud.
  *
  * WebSockets do not have cross-origin restrictions, which is why this function
@@ -739,4 +309,446 @@ function setupWebSocket(connectionInfo) {
     return ws;
 }
 
-}).call(this);
+// Populates the options of the sitename select list.
+// If the `sitelist` parameter is not set, the `sites` list is from the cache.
+// Otherwise, it is from the Cloud API.
+function renderSitenameList(sites, sitelist, lastSitename) {
+    if (!sites.length || (sites.length === 1 && sites[0] === 'lastUpdated')) {
+        return;
+    }
+    // Add the list of available sites as <option>s.
+    var sitenameElement = document.getElementById('sitename'),
+        siteOptions = document.createDocumentFragment(),
+        domainMatch = '',
+        lastSelection = '',
+        now = Date.now(),
+        op;
+    sites.sort();
+    for (var i = 0, l = sites.length; i < l; i++) {
+        var sitename = sites[i];
+        // Sitenames are all lower case by convention,
+        // so there shouldn't be any environments named lastUpdated.
+        if (sitename === 'lastUpdated') {
+            continue;
+        }
+        op = document.createElement('option');
+        op.value = sitename;
+        op.textContent = sitename;
+        siteOptions.appendChild(op);
+        if (sitename === lastSitename) {
+            lastSelection = sitename;
+        }
+        if (sitename === domainMatchedSitename) {
+            domainMatch = sitename;
+        }
+        if (sitelist && typeof sitelist === 'object') {
+            if (typeof sitelist[sitename] === 'undefined') {
+                sitelist[sitename] = {lastUpdated: now};
+            }
+            else {
+                sitelist[sitename].lastUpdated = now;
+            }
+        }
+    }
+    sitenameElement.innerHTML = '';
+    sitenameElement.appendChild(siteOptions);
+    sitenameElement.value = domainMatch || lastSelection || sitenameElement.options[0].value;
+    sitenameElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
+    if (sitelist) {
+        // Remove cached sites that aren't in the newly retrieved list.
+        for (var site in sitelist) {
+            if (sitelist.hasOwnProperty(site) && typeof sitelist[site] === 'object' && sitelist[site].lastUpdated !== now) {
+                delete sitelist[site];
+            }
+        }
+    }
+}
+
+// Populates the options of the sitename select list from the cache and remotely.
+function resetSitenameList(sitelist, lastSitename) {
+    // Load from cache for speed.
+    renderSitenameList(Object.keys(sitelist), null, lastSitename);
+    // Refresh from Cloud.
+    showMessage(t('info_refreshSitesStart'), 'debug', null, 'sent');
+    getCloudInfo(
+        'sites',
+        function(sites) {
+            if (!sites.length) {
+                return showMessage(t('errors_noSites'), 'info', null, 'extension-error');
+            }
+            renderSitenameList(sites, sitelist, lastSitename);
+            showMessage(t('info_refreshSitesSuccess'), 'debug', null, 'received');
+            chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
+        },
+        function(xhr) {
+            // This is marked as "info" instead of "debug" because something pretty fundamental is probably wrong if this request fails.
+            showMessage(t('errors_refreshSitesFailed', [
+                xhr.statusText, xhr.responseText,
+            ]), 'info', null, 'extension-error');
+        }
+    );
+}
+
+// Populates the options of the environment select list.
+// If the `site` parameter is not set, the `envs` list is from the cache.
+// Otherwise, it is from the Cloud API.
+function renderEnvironmentList(envs, site, lastEnvName) {
+    if (!envs.length || (envs.length === 1 && envs[0] === 'lastUpdated')) {
+        return;
+    }
+    // Add the list of available environments as <option>s.
+    var environmentElement = document.getElementById('environment'),
+        envOptions = document.createDocumentFragment(),
+        prod = '',
+        dev = '',
+        domainMatch = '',
+        lastSelection = '',
+        now = Date.now(),
+        op,
+        envOrder = ['dev', 'test', 'prod', 'live01', 'ra'];
+    envs.sort(function(a, b) {
+        if (a === b) return 0;
+        for (var i = 0; i < envOrder.length; i++) {
+            if (a === envOrder[i]) return -1;
+            else if (b === envOrder[i]) return 1;
+        }
+        return a.localeCompare(b);
+    });
+    for (var i = 0, l = envs.length; i < l; i++) {
+        var envName = envs[i];
+        // Environment names are all lower case by convention,
+        // so there shouldn't be any environments named lastUpdated.
+        if (envName === 'lastUpdated') {
+            continue;
+        }
+        op = document.createElement('option');
+        op.value = envName;
+        op.textContent = envName;
+        envOptions.appendChild(op);
+        // 'live01' is the default name of prod in ACSF
+        if (envName === 'prod' || envName.indexOf('live01') === 0) {
+            prod = envName;
+        }
+        if (envName === 'dev') {
+            dev = envName;
+        }
+        if (envName === lastEnvName) {
+            lastSelection = envName;
+        }
+        if (envName === domainMatchedEnvironment) {
+            domainMatch = envName;
+        }
+        if (site && typeof site === 'object') {
+            if (typeof site[envName] === 'undefined') {
+                site[envName] = {lastUpdated: now};
+            }
+            else {
+                site[envName].lastUpdated = now;
+            }
+        }
+    }
+    environmentElement.innerHTML = '';
+    environmentElement.appendChild(envOptions);
+    environmentElement.value = domainMatch || lastSelection || prod || dev || environmentElement.options[0].value;
+    environmentElement.dispatchEvent(new Event('change', {bubbles: true, cancelable: false}));
+    if (site) {
+        // Remove cached environments that aren't in the newly retrieved list.
+        for (var env in site) {
+            if (site.hasOwnProperty(env) && typeof site[env] === 'object' && site[env].lastUpdated !== now) {
+                delete site[env];
+            }
+        }
+    }
+}
+
+// Populates the options of the environment select list from the cache and remotely.
+function resetEnvironmentList(sitename, sitelist, lastEnvName) {
+    // Load from cache for speed.
+    renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
+    // Refresh from Cloud.
+    showMessage(t('info_refreshEnvironmentsStart', sitename), 'debug', null, 'sent');
+    getCloudInfo(
+        'sites/' + sitename + '/envs',
+        function(envs) {
+            if (!envs.length) {
+                return showMessage(t('errors_noEnvironments', sitename), 'info', null, 'extension-error');
+            }
+            renderEnvironmentList(envs.map(function(env) {
+                return env.name;
+            }), sitelist[sitename], lastEnvName);
+            chrome.storage.local.set({'acquia-logstream.sitelist': JSON.stringify(sitelist)});
+            showMessage(t('info_refreshEnvironmentsSuccess'), 'debug', null, 'received');
+        },
+        function(xhr) {
+            showMessage(t('errors_refreshEnvironmentsFailed', [
+                sitename, xhr.statusText, xhr.responseText,
+            ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
+        }
+    );
+}
+
+function sendRequestHeaderStatus() {
+    if (onlyMe) {
+        chrome.runtime.sendMessage('enableRequestHeaders', function(uuid) {
+            onlyMe = new RegExp('request_id="ac-ls-ce-' + uuid + '-[0-9a-f-]{36}');
+        });
+    }
+    else {
+        chrome.runtime.sendMessage('disableRequestHeaders');
+    }
+}
+
+chrome.storage.local.get({
+        'acquia-logstream.username': '',
+        'acquia-logstream.password': '',
+        'acquia-logstream.sitename': '',
+        'acquia-logstream.environment': '',
+        'acquia-logstream.onlyme': onlyMe,
+        'acquia-logstream.logtypes': JSON.stringify(logTypes),
+        // Sitelist format is {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
+        'acquia-logstream.sitelist': JSON.stringify({}),
+    },
+    function(items) {
+        logIfError('errors_getSettings');
+
+        if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
+            document.getElementById('credentials-error').classList.remove('hidden');
+        }
+
+        onlyMe = items['acquia-logstream.onlyme'];
+        document.getElementById('show-only-me').checked = !!onlyMe;
+        sendRequestHeaderStatus();
+
+        logTypes = JSON.parse(items['acquia-logstream.logtypes']);
+        var logOptions = document.createDocumentFragment();
+        for (var type in logTypes) {
+            if (logTypes.hasOwnProperty(type) && logTypes[type].allowToggling) {
+                var op = document.createElement('option');
+                if (logTypes[type].enabled) {
+                    op.setAttribute('selected', '');
+                }
+                op.value = type;
+                op.textContent = logTypes[type].name;
+                logOptions.appendChild(op);
+            }
+        }
+        document.getElementById('logtypes').appendChild(logOptions);
+
+        var sitelist = JSON.parse(items['acquia-logstream.sitelist']),
+            lastSite;
+
+        // Update the environment list when the site changes.
+        document.getElementById('sitename').addEventListener('change', function() {
+            var sitename = this.value;
+            if (sitename === lastSite || !sitename) {
+                return;
+            }
+            lastSite = sitename;
+            resetEnvironmentList(sitename, sitelist, items['acquia-logstream.environment']);
+        });
+
+        // Update the sitename list.
+        resetSitenameList(sitelist, items['acquia-logstream.sitename']);
+    }
+);
+
+// (Dis)connect when the button is clicked.
+document.getElementById('connect').addEventListener('click', (function() {
+    var connectButton = document.getElementById('connect'),
+        sitenameElement = document.getElementById('sitename'),
+        environmentElement = document.getElementById('environment'),
+        ws;
+
+    function onGetLogStreamConnectionInfoSuccess(connectionInfo) {
+        ws = setupWebSocket(connectionInfo);
+        connectButton.value = t('panel_disconnect');
+    }
+
+    function onGetLogStreamConnectionInfoFailure(xhr) {
+        showMessage(t('errors_getLogStreamConnectionInfoFailed', [
+            xhr.statusText, xhr.responseText
+        ]), 'info', null, 'extension-error');
+        try {
+            ws.close();
+        }
+        catch(e) {}
+    }
+
+    return function(event) {
+        event.preventDefault();
+        if (typeof ws === 'undefined' || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
+            var site = sitenameElement.value,
+                env  = environmentElement.value;
+
+            if (!site) {
+                return showMessage(t('errors_invalidSitename'), 'info', null, 'extension-error');
+            }
+            if (!env) {
+                return showMessage(t('errors_invalidEnvironment'), 'info', null, 'extension-error');
+            }
+
+            showMessage(t('info_connecting'));
+            getCloudInfo(
+                'sites/' + site + '/envs/' + env + '/logstream',
+                onGetLogStreamConnectionInfoSuccess,
+                onGetLogStreamConnectionInfoFailure
+            );
+        }
+        else { // ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING
+            ws.close();
+            connectButton.value = t('panel_reconnect');
+        }
+    };
+})());
+
+// Save the most recent sitename.
+document.getElementById('sitename').addEventListener('change', function() {
+    chrome.storage.local.set({'acquia-logstream.sitename': this.value});
+});
+
+// Save the most recent environment.
+document.getElementById('environment').addEventListener('change', (function() {
+    var sitenameElement = document.getElementById('sitename'),
+        environmentElement = document.getElementById('environment');
+
+    function onGetDomainsFailure(xhr) {
+        showMessage(t('errors_getDomainsFailed', [
+            xhr.statusText, xhr.responseText,
+        ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
+    }
+
+    function onGetDomains(items) {
+        if (logIfError('errors_getCachedDomainsFailed')) {
+            return;
+        }
+        var domains = JSON.parse(items['acquia-logstream.domains']),
+            sitename = sitenameElement.value,
+            envName = environmentElement.value;
+        getCloudInfo(
+            'sites/' + sitename + '/envs/' + envName + '/domains',
+            function(results) {
+                for (var i = 0, l = results.length; i < l; i++) {
+                    domains[results[i].name] = {
+                        sitename: sitename,
+                        environment: envName,
+                    };
+                }
+                chrome.storage.local.set({'acquia-logstream.domains': JSON.stringify(domains)});
+            },
+            onGetDomainsFailure
+        );
+    }
+
+    return function() {
+        if (sitenameElement.value && environmentElement.value) {
+            chrome.storage.local.set({'acquia-logstream.environment': environmentElement.value});
+            // Cache the list of domains for this environment.
+            // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+            chrome.storage.local.get({ 'acquia-logstream.domains': JSON.stringify({}) }, onGetDomains);
+        }
+    };
+})());
+
+// Update the regex filter.
+var lastRegexValue = '';
+document.getElementById('regex').addEventListener('keyup', function() {
+    var thisValue = this.value;
+    if (thisValue === lastRegexValue) {
+        return;
+    }
+    lastRegexValue = thisValue;
+    try {
+        regexFilter = thisValue ? new RegExp(thisValue, 'm') : '';
+    }
+    catch(e) {
+        showMessage(t('errors_regexDidNotCompile', [
+            thisValue, e.name, e.message,
+        ]), 'info', null, 'extension-error');
+    }
+});
+
+// Change whether messages are limited to only the ones generated by the current user when the checkbox value changes.
+document.getElementById('show-only-me').addEventListener('change', function() {
+    onlyMe = this.checked;
+    chrome.storage.local.set({'acquia-logstream.onlyme': this.checked});
+    sendRequestHeaderStatus();
+});
+
+// Set which log types to filter when the "Show log types" option changes.
+document.getElementById('logtypes').addEventListener('change', function(event) {
+    var o = event.target.options;
+    for (var i = 0, l = o.length; i < l; i++) {
+        if (typeof logTypes[o[i].value] === 'object') {
+            logTypes[o[i].value].enabled = o[i].selected;
+        }
+    }
+    chrome.storage.local.set({'acquia-logstream.logtypes': JSON.stringify(logTypes)});
+});
+
+// Check to see if the current domain is associated with a cached sitename and environment, and if so, automatically pick them.
+chrome.storage.local.get({
+        // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+        'acquia-logstream.domains': JSON.stringify({}),
+    },
+    function(items) {
+        logIfError('errors_getCachedDomainsFailed');
+        chrome.devtools.inspectedWindow.eval('window.location.hostname', function(hostname, error) {
+            if (error || !hostname) {
+                showMessage(t('errors_getHostname', error), 'debug', null, 'extension-error', 'here');
+            }
+            else {
+                var domains = JSON.parse(items['acquia-logstream.domains']);
+                for (var domain in domains) {
+                    if (domains.hasOwnProperty(domain) && domain === hostname) {
+                        domainMatchedSitename = domains[domain].sitename;
+                        domainMatchedEnvironment = domains[domain].environment;
+                        return;
+                    }
+                }
+            }
+        });
+    }
+);
+
+// Expand log message when clicked
+document.getElementById('content').addEventListener('click', function(event) {
+    if (event.target.classList.contains('message')) {
+        event.target.classList.remove('collapsed');
+    }
+});
+
+// Update the credentials error, sitename list, and environment list when the Acquia Cloud credentials change.
+chrome.storage.onChanged.addListener((function() {
+    function onCredentialsChanged(items) {
+        logIfError('errors_getCredentialsFailed');
+
+        if (!items['acquia-logstream.username'] || !items['acquia-logstream.password']) {
+            return document.getElementById('credentials-error').classList.remove('hidden');
+        }
+        document.getElementById('credentials-error').classList.add('hidden');
+
+        resetSitenameList({}, items['acquia-logstream.sitename']);
+    }
+
+    return function(changes, namespace) {
+        for (var key in changes) {
+            if (namespace === 'local' && (key === 'acquia-logstream.username' || key === 'acquia-logstream.password')) {
+                return chrome.storage.local.get({
+                    'acquia-logstream.username': '',
+                    'acquia-logstream.password': '',
+                    'acquia-logstream.sitename': '',
+                }, onCredentialsChanged);
+            }
+        }
+    };
+})());
+
+// Open the settings when a settings link is clicked.
+document.getElementById('controls').addEventListener('click', function(event) {
+    if (event.target.classList.contains('options-link')) {
+        event.preventDefault();
+        chrome.runtime.sendMessage('openOptionsPage');
+    }
+});
+
+});
