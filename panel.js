@@ -88,7 +88,7 @@ var showMessage = (function() {
     var container = document.getElementById('content'),
         messageDate = new Date(),
         elemCount = 0,
-        ELEMCOUNT_MAX = 100,
+        ELEMCOUNT_MAX = 1000,
         formatDate = new Intl.DateTimeFormat(new Intl.DateTimeFormat().resolvedOptions().locale, {
             year: 'numeric',
             month: '2-digit',
@@ -99,7 +99,7 @@ var showMessage = (function() {
             timeZoneName: 'short',
         }).format;
 
-    chrome.storage.sync.get({ 'elemcount_max': 100 }, function(items) {
+    chrome.storage.sync.get({ 'elemcount_max': 1000 }, function(items) {
         // Use the setting for the max unless there was an error retrieving it.
         if (typeof chrome.runtime.lastError !== 'string') {
             ELEMCOUNT_MAX = items.elemcount_max;
