@@ -103,6 +103,12 @@ window.addEventListener('load', function() {
                 checkingElement.classList.toggle('visible',  false);
                 successElement.classList.toggle('visible',  authSucceeded);
                 failureElement.classList.toggle('visible', !authSucceeded);
+                if (authSucceeded) {
+                    chrome.storage.local.set({
+                        username: user,
+                        password: pass,
+                    });
+                }
             });
         }
         else {

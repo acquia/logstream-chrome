@@ -376,10 +376,9 @@ function resetSitenameList(sitelist, lastSitename) {
             chrome.storage.local.set({ sitelist: JSON.stringify(sitelist) });
         },
         function(xhr) {
-            // This is marked as "info" instead of "debug" because something pretty fundamental is probably wrong if this request fails.
             showMessage(t('errors_refreshSitesFailed', [
                 xhr.statusText, xhr.responseText,
-            ]), 'info', null, 'extension-error');
+            ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
         }
     );
 }
@@ -459,7 +458,9 @@ function renderEnvironmentList(envs, site, lastEnvName) {
 // Populates the options of the environment select list from the cache and remotely.
 function resetEnvironmentList(sitename, sitelist, lastEnvName) {
     // Load from cache for speed.
-    renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
+    if (typeof sitelist[sitename] !== 'undefined') {
+        renderEnvironmentList(Object.keys(sitelist[sitename]), null, lastEnvName);
+    }
     // Refresh from Cloud.
     showMessage(t('info_refreshEnvironmentsStart', sitename), 'debug', null, 'sent');
     getCloudInfo(
@@ -493,11 +494,78 @@ function sendRequestHeaderStatus() {
     }
 }
 
+// Save the most recent sitename and update the environment list.
+document.getElementById('sitename').addEventListener('change', (function() {
+    var sitenameElement = document.getElementById('sitename'),
+        environmentElement = document.getElementById('environment'),
+        lastSite;
+
+    function onGetSitelist(items) {
+        logIfError('errors_getSettings');
+        resetEnvironmentList(sitenameElement.value, JSON.parse(items.sitelist), items.environment);
+    }
+
+    return function() {
+        var sitename = sitenameElement.value;
+        chrome.storage.local.set({ sitename: sitename });
+
+        if ((sitename !== lastSite && sitename) || !environmentElement.length) {
+            lastSite = sitename;
+            chrome.storage.local.get({
+                environment: '',
+                sitelist: JSON.stringify({}),
+            }, onGetSitelist);
+        }
+    };
+})());
+
+// Save the most recent environment.
+document.getElementById('environment').addEventListener('change', (function() {
+    var sitenameElement = document.getElementById('sitename'),
+        environmentElement = document.getElementById('environment');
+
+    function onGetDomainsFailure(xhr) {
+        showMessage(t('errors_getDomainsFailed', [
+            xhr.statusText, xhr.responseText,
+        ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
+    }
+
+    function onGetDomains(items) {
+        if (logIfError('errors_getCachedDomainsFailed')) {
+            return;
+        }
+        var domains = JSON.parse(items.domains),
+            sitename = sitenameElement.value,
+            envName = environmentElement.value;
+        getCloudInfo(
+            'sites/' + sitename + '/envs/' + envName + '/domains',
+            function(results) {
+                for (var i = 0, l = results.length; i < l; i++) {
+                    domains[results[i].name] = {
+                        sitename: sitename,
+                        environment: envName,
+                    };
+                }
+                chrome.storage.local.set({ domains: JSON.stringify(domains) });
+            },
+            onGetDomainsFailure
+        );
+    }
+
+    return function() {
+        if (sitenameElement.value && environmentElement.value) {
+            chrome.storage.local.set({ environment: environmentElement.value });
+            // Cache the list of domains for this environment.
+            // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
+            chrome.storage.local.get({ domains: JSON.stringify({}) }, onGetDomains);
+        }
+    };
+})());
+
 chrome.storage.local.get({
         username: '',
         password: '',
         sitename: '',
-        environment: '',
         onlyme: onlyMe,
         logtypes: JSON.stringify(logTypes),
         // Sitelist format is {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
@@ -529,21 +597,8 @@ chrome.storage.local.get({
         }
         document.getElementById('logtypes').appendChild(logOptions);
 
-        var sitelist = JSON.parse(items.sitelist),
-            lastSite;
-
-        // Update the environment list when the site changes.
-        document.getElementById('sitename').addEventListener('change', function() {
-            var sitename = this.value;
-            if (sitename === lastSite || !sitename) {
-                return;
-            }
-            lastSite = sitename;
-            resetEnvironmentList(sitename, sitelist, items.environment);
-        });
-
         // Update the sitename list.
-        resetSitenameList(sitelist, items.sitename);
+        resetSitenameList(JSON.parse(items.sitelist), items.sitename);
     }
 );
 
@@ -592,54 +647,6 @@ document.getElementById('connect').addEventListener('click', (function() {
         else { // ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING
             ws.close();
             connectButton.value = t('panel_reconnect');
-        }
-    };
-})());
-
-// Save the most recent sitename.
-document.getElementById('sitename').addEventListener('change', function() {
-    chrome.storage.local.set({ sitename: this.value });
-});
-
-// Save the most recent environment.
-document.getElementById('environment').addEventListener('change', (function() {
-    var sitenameElement = document.getElementById('sitename'),
-        environmentElement = document.getElementById('environment');
-
-    function onGetDomainsFailure(xhr) {
-        showMessage(t('errors_getDomainsFailed', [
-            xhr.statusText, xhr.responseText,
-        ]), 'debug', null, 'extension-error', xhr.status >= 400 && xhr.status < 500 ? 'sent' : 'received');
-    }
-
-    function onGetDomains(items) {
-        if (logIfError('errors_getCachedDomainsFailed')) {
-            return;
-        }
-        var domains = JSON.parse(items.domains),
-            sitename = sitenameElement.value,
-            envName = environmentElement.value;
-        getCloudInfo(
-            'sites/' + sitename + '/envs/' + envName + '/domains',
-            function(results) {
-                for (var i = 0, l = results.length; i < l; i++) {
-                    domains[results[i].name] = {
-                        sitename: sitename,
-                        environment: envName,
-                    };
-                }
-                chrome.storage.local.set({ domains: JSON.stringify(domains) });
-            },
-            onGetDomainsFailure
-        );
-    }
-
-    return function() {
-        if (sitenameElement.value && environmentElement.value) {
-            chrome.storage.local.set({ environment: environmentElement.value });
-            // Cache the list of domains for this environment.
-            // Domains format is {DOMAIN: {sitename: SITENAME, environment: ENVNAME}}
-            chrome.storage.local.get({ domains: JSON.stringify({}) }, onGetDomains);
         }
     };
 })());
