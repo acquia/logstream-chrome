@@ -22,17 +22,17 @@ Copyright (C) 2015 Acquia, Inc - all rights reserved.
 Subject to the terms and conditions of this License, the Licensor hereby grants
 You a worldwide, non-sublicensable, non-exclusive, perpetual license to:
 
-    - Use the Software within your company for the sole purposes of monitoring
-      or debugging your products, maintaining your products, or enhancing the
-      interoperability of your products with Acquia products.
-    - Produce and Reproduce, but not Share, modifications to the Software for
-      Non-Commercial purposes or to contribute back to this project only.
-      By submitting a contribution to this project, you grant Acquia a
-      worldwide, perpetual, royalty-free, non-exclusive, irrevocable license to
-      use, reproduce, prepare derivative works of, publicly display,
-      sublicense, and distribute your Contributions and such derivative works
-      as part of this Software without limitation, and you represent that you
-      are legally entitled to grant such license.
+ - Use the Software within your company for the sole purposes of monitoring
+   or debugging your products, maintaining your products, or enhancing the
+   interoperability of your products with Acquia products.
+ - Produce and Reproduce, but not Share, modifications to the Software for
+   Non-Commercial purposes or to contribute back to this project only.
+   By submitting a contribution to this project, you grant Acquia a
+   worldwide, perpetual, royalty-free, non-exclusive, irrevocable license to
+   use, reproduce, prepare derivative works of, publicly display,
+   sublicense, and distribute your Contributions and such derivative works
+   as part of this Software without limitation, and you represent that you
+   are legally entitled to grant such license.
 
 Nothing in this License constitutes or may be construed as permission to assert
 or imply that You are sponsored, endorsed, or granted official status by the
