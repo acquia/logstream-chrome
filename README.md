@@ -10,9 +10,9 @@ First, your website needs to be running on Acquia Cloud. If you don't have a
 website on Acquia Cloud but you want to try this extension anyway, you can
 [sign up for free](https://insight.acquia.com/free).
 
-Second, you need to install the extension. Until this extension is available on
-the Chrome Web Store, you will need to
-[load it in developer mode](https://developer.chrome.com/extensions/getstarted#unpacked).
+Second, you need to install the extension. You can do this from the
+[Chrome Web Store](https://chrome.google.com/webstore/detail/logstream/pnpolgbojealkmfopnjlkaabicpdlhbg)
+or [load it in developer mode](https://developer.chrome.com/extensions/getstarted#unpacked).
 
 Third, you need to input your login credentials to Acquia Cloud in the
 extension's settings.
@@ -36,7 +36,4 @@ them. Also, the Filter box accepts regular expressions.
 
 ## TODO
 
-- Publish the extension and update the README to point to the extension on the Chrome Web Store
-- Get the code on GitHub
-- Make filtering by log type and regex and user-generation operate on logs after they're written to the DOM instead of when they're streamed
-- Improve the select widgets for sitename and environment to be searchable to accomodate people with lots of sites. There don't seem to be any vanilla JS frameworks for this though.
+- [Publish the extension](https://backlog.acquia.com/browse/IT-12978), [update who can access it](https://chrome.google.com/webstore/developer/edit/pnpolgbojealkmfopnjlkaabicpdlhbg), [update its ownership](https://blog.chromium.org/2013/08/group-based-publishing-in-chrome-web.html), and [update](https://backlog.acquia.com/browse/GIT-1389) the [repo settings](https://github.com/acquia/logstream-chrome)
