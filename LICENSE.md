@@ -29,8 +29,10 @@ You a worldwide, non-sublicensable, non-exclusive, perpetual license to:
       Non-Commercial purposes or to contribute back to this project only.
       By submitting a contribution to this project, you grant Acquia a
       worldwide, perpetual, royalty-free, non-exclusive, irrevocable license to
-      use and distribute your Contributions as part of this Software without
-      limitation.
+      use, reproduce, prepare derivative works of, publicly display,
+      sublicense, and distribute your Contributions and such derivative works
+      as part of this Software without limitation, and you represent that you
+      are legally entitled to grant such license.
 
 Nothing in this License constitutes or may be construed as permission to assert
 or imply that You are sponsored, endorsed, or granted official status by the
