@@ -5,7 +5,7 @@
     "short_name": "__MSG_extension_shortName__",
     "description": "__MSG_extension_description__",
     "version": "1.0.0",
-    "minimum_chrome_version": "26.0",
+    "minimum_chrome_version": "29.0",
     "default_locale": "en",
     "offline_enabled": false,
 

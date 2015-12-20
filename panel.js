@@ -86,6 +86,7 @@ var logTypes = {
 var showMessage = (function() {
     // This works because we load the script after the container element.
     var container = document.getElementById('content'),
+        queuedLogs = document.createDocumentFragment(),
         messageDate = new Date(),
         elemCount = 0,
         ELEMCOUNT_MAX = 1000,
@@ -99,15 +100,34 @@ var showMessage = (function() {
             timeZoneName: 'short',
         }).format;
 
-    chrome.storage.sync.get({ 'elemcount_max': 1000 }, function(items) {
+    chrome.storage.sync.get({ 'elemcount_max': ELEMCOUNT_MAX }, function(items) {
         // Use the setting for the max unless there was an error retrieving it.
         if (typeof chrome.runtime.lastError !== 'string') {
             ELEMCOUNT_MAX = items.elemcount_max;
         }
     });
 
+    requestAnimationFrame(function writeLogs() {
+        if (queuedLogs.children.length) {
+            // Inserting a DocumentFragment removes its children.
+            // http://dom.spec.whatwg.org/#concept-node-insert
+            container.insertBefore(queuedLogs, container.firstChild);
+
+            // Remove elements at the end of the stream if there are too many.
+            while (elemCount > ELEMCOUNT_MAX) {
+                container.removeChild(container.lastChild);
+                elemCount--;
+            }
+        }
+        requestAnimationFrame(writeLogs);
+    });
+
     /**
-     * Log a message to the logstream devtools panel.
+     * Logs a message to the logstream devtools panel.
+     *
+     * For performance reasons, the message is not appended to the document
+     * during this function's execution; instead, it is queued to be added
+     * the next time a frame is being painted.
      *
      * @param {String} message
      *   The message to show.
@@ -146,11 +166,8 @@ var showMessage = (function() {
         el.appendChild(dt);
         el.appendChild(ty);
         el.innerHTML += tx.textContent;
-        container.insertBefore(el, container.firstChild);
-        if (++elemCount > ELEMCOUNT_MAX) {
-            container.removeChild(container.lastChild);
-            elemCount--;
-        }
+        queuedLogs.insertBefore(el, queuedLogs.firstChild);
+        elemCount++;
     };
 })();
 
