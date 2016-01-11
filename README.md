@@ -27,13 +27,6 @@ Select the sitename and environment for the site you are investigating, then
 click the "Connect" button to start streaming logs. You can browse around your
 website and watch as the logs are generated in real time.
 
-Note that you can click on logs that are too long to fit in one line to expand
-them. Also, the Filter box accepts regular expressions.
-
 ## Video
 
 ![Logstream video](logstream-video.gif)
-
-## TODO
-
-- [Publish the extension](https://backlog.acquia.com/browse/IT-12978), [update who can access it](https://chrome.google.com/webstore/developer/edit/pnpolgbojealkmfopnjlkaabicpdlhbg), [update its ownership](https://blog.chromium.org/2013/08/group-based-publishing-in-chrome-web.html), and [update](https://backlog.acquia.com/browse/GIT-1389) the [repo settings](https://github.com/acquia/logstream-chrome)
