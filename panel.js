@@ -762,13 +762,13 @@ chrome.storage.onChanged.addListener((function() {
 })());
 
 // Export logs.
-document.getElementById('export').addEventListener('click', function (event) {
+document.getElementById('export').addEventListener('click', function () {
     var sitename = document.getElementById('sitename').value.replace(/\W+/g, '-'),
         environment = document.getElementById('environment').value.replace(/\W+/g, '-'),
         datetime = new Date().toISOString().replace(/:|T/g, '-').replace(/\.\d+Z$/, ''),
-        contents = '';
+        contents = '',
+        messages = document.querySelectorAll('#content .message');
 
-    var messages = document.querySelectorAll('#content .message');
     for (var i = 0, l = messages.length; i < l; i++) {
         for (var j = 0, n = messages[i].childNodes, l2 = n.length; j < l2; j++) {
             contents += n[j].textContent + '\t';
