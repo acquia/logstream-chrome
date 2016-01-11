@@ -14,6 +14,19 @@ body {
     background-color: #56c1f8; /* brand_primary.5 (blue) */
 }
 
+a,
+a:link,
+a:visited {
+    color: #018dc7; /* brand_primary.9 (blue) */
+    text-decoration: none;
+}
+
+a:hover,
+a:active {
+    color: #29aae1; /* brand_primary.7 (blue) */
+    text-decoration: underline;
+}
+
 .options-page {
     background-color: rgba(252, 252, 253, 1);
 }
@@ -127,15 +140,24 @@ p.error {
 
 .error a {
     color: #941403; /* state_danger.10 (dark red) */
+    text-decoration: underline;
 }
 
 .hidden {
     display: none;
 }
 
+#export-wrapper {
+    bottom: 5px;
+    font-size: 12px;
+    position: absolute;
+    right: 10px;
+}
+
 #form-wrapper {
     background-color: #e7f0f4; /* light blue */
     border-bottom: 12px solid #004f86; /* brand_primary.11 (dark blue) */
+    position: relative;
 }
 
 #controls {
@@ -240,11 +262,13 @@ select[multiple]:focus {
     border: 1px solid #0e68a7; /* brand_primary.10 (blue) */
     border-radius: 4px;
     box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
     color: #f5f5f5; /* neutral.0 */
     cursor: pointer;
     font-family: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
     font-size: 21px;
     margin: 22px 0;
+    min-width: 132px;
     padding: 6px 12px;
     transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
     -webkit-font-smoothing: antialiased;
@@ -271,6 +295,7 @@ select[multiple]:focus {
 }
 
 .collapsed {
+    cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

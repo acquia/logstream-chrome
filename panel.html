@@ -7,6 +7,9 @@
 </head>
 <body>
     <div id="form-wrapper">
+        <div id="export-wrapper">
+            <a href="#" id="export" data-i18n="panel_export" download="logs.txt">download logs</a>
+        </div>
         <form id="controls">
             <p class="error hidden" id="credentials-error" data-i18n="innerHTML=errors_credentials">
                 You must <a href="#" class="options-link">enter valid Acquia
@@ -36,7 +39,7 @@
             <fieldset class="stacked centered">
                 <label for="regex">
                     <span class="label align-label-column" data-i18n="panel_regex">Filter:</span>
-                    <input autocapitalize="none" autocomplete="off" autocorrect="off" id="regex" inputmode="verbatim" maxlength="256" spellcheck="false" type="text" />
+                    <input autocapitalize="none" autocomplete="off" autocorrect="off" data-i18n="placeholder=panel_regexInfo" id="regex" inputmode="verbatim" maxlength="256" spellcheck="false" placeholder="e.g. \\buid=[1-9]\\d*" type="text" />
                 </label>
                 <label for="show-only-me">
                     <input id="show-only-me" type="checkbox" value="" checked />

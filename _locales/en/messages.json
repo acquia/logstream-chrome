@@ -45,6 +45,10 @@
         "description": "Warns users about how their password will be stored."
     },
 
+    "panel_export": {
+        "message": "download logs",
+        "description": "The text of the link to export streamed logs on the log streaming panel."
+    },
     "panel_sitename": {
         "message": "Sitename:",
         "description": "The label of the sitename select element on the log streaming panel."
@@ -60,6 +64,10 @@
     "panel_regex": {
         "message": "Filter:",
         "description": "The label of the textfield on the log streaming panel that filters incoming messages to those that match the provided regular expression."
+    },
+    "panel_regexInfo": {
+        "message": "e.g. \\buid=[1-9]\\d*",
+        "description": "The placeholder text of the textfield on the log streaming panel that filters incoming messages to those that match the provided regular expression."
     },
     "panel_onlyMe": {
         "message": "Show only logs I generate",
@@ -198,6 +206,16 @@
     "info_connectionClosed": {
         "message": "The log streaming connection closed.",
         "description": "A debug message that displays in the log stream after a WebSocket connection is closed."
+    },
+    "info_exported": {
+        "message": "$number$ log messages exported.",
+        "description": "A debug message that displays in the log stream after the user downloads the streamed logs.",
+        "placeholders": {
+            "number": {
+                "content": "$1",
+                "example": "79"
+            }
+        }
     },
 
     "errors_getSettings": {

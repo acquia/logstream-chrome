@@ -592,6 +592,7 @@ chrome.storage.local.get({
         logIfError('errors_getSettings');
 
         if (!items.username || !items.password) {
+            document.getElementById('export-wrapper').classList.add('hidden');
             document.getElementById('credentials-error').classList.remove('hidden');
         }
 
@@ -738,8 +739,10 @@ chrome.storage.onChanged.addListener((function() {
         logIfError('errors_getCredentialsFailed');
 
         if (!items.username || !items.password) {
+            document.getElementById('export-wrapper').classList.add('hidden');
             return document.getElementById('credentials-error').classList.remove('hidden');
         }
+        document.getElementById('export-wrapper').classList.remove('hidden');
         document.getElementById('credentials-error').classList.add('hidden');
 
         resetSitenameList({}, items.sitename);
@@ -757,6 +760,26 @@ chrome.storage.onChanged.addListener((function() {
         }
     };
 })());
+
+// Export logs.
+document.getElementById('export').addEventListener('click', function (event) {
+    var sitename = document.getElementById('sitename').value.replace(/\W+/g, '-'),
+        environment = document.getElementById('environment').value.replace(/\W+/g, '-'),
+        datetime = new Date().toISOString().replace(/:|T/g, '-').replace(/\.\d+Z$/, ''),
+        contents = '';
+
+    var messages = document.querySelectorAll('#content .message');
+    for (var i = 0, l = messages.length; i < l; i++) {
+        for (var j = 0, n = messages[i].childNodes, l2 = n.length; j < l2; j++) {
+            contents += n[j].textContent + '\t';
+        }
+        contents += '\n';
+    }
+
+    this.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(contents));
+    this.setAttribute('download', 'logs-' + sitename + '-' + environment + '-' + datetime + '.txt');
+    showMessage(t('info_exported', messages.length + ''), 'debug', null, 'here');
+});
 
 // Open the settings when a settings link is clicked.
 document.getElementById('controls').addEventListener('click', function(event) {
