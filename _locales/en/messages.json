@@ -53,6 +53,14 @@
         "message": "Sitename:",
         "description": "The label of the sitename select element on the log streaming panel."
     },
+    "panel_custom_sitename": {
+        "message": "Custom Sitename:",
+        "description": "The label of the sitename select element on the log streaming panel."
+    },
+    "panel_custom_sitenameInfo": {
+        "message": "e.g. realm:sitename",
+        "description": "The placeholder text of the textfield on the log streaming panel that allows a custom sitename to be specified for Acquia admin."
+    },
     "panel_environment": {
         "message": "Environment:",
         "description": "The label of the environment select element on the log streaming panel."

@@ -33,6 +33,9 @@ var t = chrome.i18n.getMessage;
 // If truthy, may hold a regex which identifies requests the user generated.
 var onlyMe = true;
 
+// Whether or not the user is an Acquia employee
+var acquiaUser = false;
+
 // If we can detect that the current hostname matched a Cloud site, these will
 // contain the sitename and environment of that site.
 var domainMatchedSitename = '',
@@ -362,6 +365,12 @@ function renderSitenameList(sites, sitelist, lastSitename) {
             }
         }
     }
+    if (acquiaUser) {
+        op = document.createElement('option');
+        op.value = 'other';
+        op.textContent = 'other';
+        siteOptions.appendChild(op);
+    }
     sitenameElement.innerHTML = '';
     sitenameElement.appendChild(siteOptions);
     sitenameElement.value = domainMatch || lastSelection || sitenameElement.options[0].value;
@@ -526,6 +535,40 @@ document.getElementById('sitename').addEventListener('change', (function() {
         var sitename = sitenameElement.value;
         chrome.storage.local.set({ sitename: sitename });
 
+        if (sitename === 'other') {
+            lastSite = 'other';
+            // show the custom text box for entering a sitename manually.
+            document.getElementById('customSitename').classList.remove('hidden');
+        }
+        else {
+            document.getElementById('customSitename').classList.add('hidden');
+        }
+
+        if ((sitename !== lastSite && sitename) || !environmentElement.length) {
+            lastSite = sitename;
+            chrome.storage.local.get({
+                environment: '',
+                sitelist: JSON.stringify({}),
+            }, onGetSitelist);
+        }
+    };
+})());
+
+// Save the most recent sitename and update the environment list.
+document.getElementById('custom_sitename').addEventListener('change', (function() {
+    var sitenameElement = document.getElementById('custom_sitename'),
+        environmentElement = document.getElementById('environment'),
+        lastSite;
+
+    function onGetSitelist(items) {
+        logIfError('errors_getSettings');
+        resetEnvironmentList(sitenameElement.value, JSON.parse(items.sitelist), items.environment);
+    }
+
+    return function() {
+        var sitename = sitenameElement.value;
+        chrome.storage.local.set({ sitename: sitename });
+
         if ((sitename !== lastSite && sitename) || !environmentElement.length) {
             lastSite = sitename;
             chrome.storage.local.get({
@@ -596,6 +639,11 @@ chrome.storage.local.get({
             document.getElementById('credentials-error').classList.remove('hidden');
         }
 
+        var acquiaRegex = new RegExp("@acquia\.com$", 'm');
+        if (acquiaRegex.test(items.username)) {
+            acquiaUser = true;
+        }
+
         onlyMe = items.onlyme;
         document.getElementById('show-only-me').checked = !!onlyMe;
         sendRequestHeaderStatus();
@@ -624,6 +672,7 @@ chrome.storage.local.get({
 document.getElementById('connect').addEventListener('click', (function() {
     var connectButton = document.getElementById('connect'),
         sitenameElement = document.getElementById('sitename'),
+        customSitenameElement = document.getElementById('custom_sitename'),
         environmentElement = document.getElementById('environment'),
         ws;
 
@@ -645,9 +694,13 @@ document.getElementById('connect').addEventListener('click', (function() {
     return function(event) {
         event.preventDefault();
         if (typeof ws === 'undefined' || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
-            var site = sitenameElement.value,
-                env  = environmentElement.value;
+            var site       = sitenameElement.value,
+                customSite = customSitenameElement.value,
+                env        = environmentElement.value;
 
+            if (site === 'other') {
+                site = customSite;
+            }
             if (!site) {
                 return showMessage(t('errors_invalidSitename'), 'info', null, 'extension-error');
             }
