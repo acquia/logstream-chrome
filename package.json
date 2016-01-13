@@ -5,7 +5,11 @@
     "readmeFilename": "README.md",
     "devDependencies": {
         "grunt": "~0.4.5",
+        "grunt-cli": "~0.1.13",
         "grunt-contrib-jshint": "~0.11.3",
         "grunt-jscs": "~2.3.0"
+    },
+    "scripts": {
+        "test": "node_modules/.bin/grunt"
     }
 }
