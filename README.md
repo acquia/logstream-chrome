@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/acquia/logstream-chrome.svg?token=xtQTbvC4emGeDqSsxpnp)](https://travis-ci.com/acquia/logstream-chrome)
+
 This Chrome extension allows you to see what logs are being generated in real
 time as you browse around a website that you maintain on
 [Acquia Cloud](https://www.acquia.com/products-services/acquia-cloud). This
