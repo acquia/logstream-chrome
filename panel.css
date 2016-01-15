@@ -91,6 +91,30 @@ input[type=password]:focus {
     -webkit-font-smoothing: antialiased;
 }
 
+#custom-sitename {
+    box-sizing: border-box;
+    width: 152px; /* Same size as the select elements. */
+    -webkit-font-smoothing: antialiased;
+}
+
+#custom-sitename-container .label {
+    max-height: 25px;
+    overflow: hidden;
+}
+
+#custom-sitename-container {
+    max-height: 0px;
+    padding: 0 !important;
+    transition: max-height 0.5s, padding 0.5s;
+    visibility: hidden;
+}
+
+#custom-sitename-container.active {
+    max-height: 42px;
+    padding: 2.5px 0 !important;
+    visibility: visible;
+}
+
 .options-page #username {
     margin-bottom: 6px;
 }
@@ -144,7 +168,11 @@ p.error {
 }
 
 .hidden {
-    display: none;
+    display: none !important; /* From HTML5 Boilerplate https://git.io/vznjw */
+}
+
+.transparent {
+    opacity: 0 !important;
 }
 
 #export-wrapper {
