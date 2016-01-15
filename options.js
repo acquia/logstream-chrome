@@ -56,6 +56,9 @@ window.addEventListener('load', function() {
     document.getElementById('controls').addEventListener('submit', function(event) {
         event.preventDefault();
     });
+    document.getElementById('extra-options').addEventListener('submit', function(event) {
+        event.preventDefault();
+    });
 
     var userElement = document.getElementById('username'),
         passElement = document.getElementById('password'),
@@ -119,6 +122,11 @@ window.addEventListener('load', function() {
     }
     userElement.addEventListener('input', onChangeCreds);
     passElement.addEventListener('input', onChangeCreds);
+
+    // Save the Compact Mode status.
+    document.getElementById('compact-mode').addEventListener('change', function() {
+        chrome.storage.local.set({ compactmode: this.checked });
+    });
 });
 
 }).call(this);

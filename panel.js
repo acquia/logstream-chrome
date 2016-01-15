@@ -637,12 +637,17 @@ chrome.storage.local.get({
         password: '',
         sitename: '',
         onlyme: onlyMe,
+        compactmode: true,
         logtypes: JSON.stringify(logTypes),
         // Sitelist format is {SITENAME: {ENVIRONMENT: {lastUpdated: TIMESTAMP}, lastUpdated: TIMESTAMP}}
         sitelist: JSON.stringify({}),
     },
     function(items) {
         logIfError('errors_getSettings');
+
+        if (items.compactmode) {
+            document.getElementById('content').classList.add('compactmode');
+        }
 
         if (!items.username || !items.password) {
             document.getElementById('export-wrapper').classList.add('hidden');
@@ -812,12 +817,19 @@ chrome.storage.onChanged.addListener((function() {
 
     return function(changes, namespace) {
         for (var key in changes) {
-            if (namespace === 'local' && (key === 'username' || key === 'password')) {
-                return chrome.storage.local.get({
-                    username: '',
-                    password: '',
-                    sitename: '',
-                }, onCredentialsChanged);
+            if (namespace === 'local') {
+                if (key === 'username' || key === 'password') {
+                    return chrome.storage.local.get({
+                        username: '',
+                        password: '',
+                        sitename: '',
+                    }, onCredentialsChanged);
+                }
+                else if (key === 'compactmode') {
+                    return document.getElementById('content').classList[
+                        changes[key].newValue ? 'add' : 'remove'
+                    ]('compactmode');
+                }
             }
         }
     };

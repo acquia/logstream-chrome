@@ -57,6 +57,16 @@ a:active {
     font-size: 20px;
 }
 
+.options-page #extra-options {
+    padding: 25px 0 10px;
+    text-align: center;
+}
+
+.options-page label[for="compact-mode"] .label {
+    font-size: 18px;
+    font-weight: normal;
+}
+
 input[type=text],
 input[type=password] {
     background-color: #ffffff;
@@ -331,11 +341,13 @@ select[multiple]:focus {
 
 .datetime {
     margin-right: 10px;
-    width: 250px;
+    white-space: normal;
+    width: 280px;
 }
 
 .type {
     margin-right: 10px;
+    white-space: normal;
     width: 154px;
 }
 
@@ -399,6 +411,18 @@ select[multiple]:focus {
 
 .mysql-slow {
     background-color: #fff59d; /* state_warning.3 (yellow) */
+}
+
+.compactmode {
+    font-size: 12px;
+}
+
+.compactmode .datetime {
+    width: 188px;
+}
+
+.compactmode .type {
+    width: 92px;
 }
 
 /* Make things align more nicely. */
