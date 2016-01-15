@@ -33,8 +33,11 @@ var t = chrome.i18n.getMessage;
 // If truthy, may hold a regex which identifies requests the user generated.
 var onlyMe = true;
 
-// Whether or not the user is an Acquia employee
+// Whether or not the user is an Acquia employee.
 var acquiaUser = false;
+
+// Regex used to check whether or not the user is an Acquia employee.
+var isAcquianRegex = /^[^\s@]+@acquia\.com$/i;
 
 // If we can detect that the current hostname matched a Cloud site, these will
 // contain the sitename and environment of that site.
@@ -368,7 +371,7 @@ function renderSitenameList(sites, sitelist, lastSitename) {
     if (acquiaUser) {
         op = document.createElement('option');
         op.value = 'other';
-        op.textContent = 'other';
+        op.textContent = t('panel_customSitenameOther');
         siteOptions.appendChild(op);
     }
     sitenameElement.innerHTML = '';
@@ -524,6 +527,7 @@ function sendRequestHeaderStatus() {
 document.getElementById('sitename').addEventListener('change', (function() {
     var sitenameElement = document.getElementById('sitename'),
         environmentElement = document.getElementById('environment'),
+        customSitenameElement = document.getElementById('custom-sitename-container'),
         lastSite;
 
     function onGetSitelist(items) {
@@ -536,12 +540,13 @@ document.getElementById('sitename').addEventListener('change', (function() {
         chrome.storage.local.set({ sitename: sitename });
 
         if (sitename === 'other') {
+            // Prevents refreshing environments before a custom sitename is entered.
             lastSite = 'other';
-            // show the custom text box for entering a sitename manually.
-            document.getElementById('customSitename').classList.remove('hidden');
+            // Show the text box for entering a sitename manually.
+            customSitenameElement.classList.add('active');
         }
-        else {
-            document.getElementById('customSitename').classList.add('hidden');
+        else if (lastSite === 'other') {
+            customSitenameElement.classList.remove('active');
         }
 
         if ((sitename !== lastSite && sitename) || !environmentElement.length) {
@@ -554,9 +559,14 @@ document.getElementById('sitename').addEventListener('change', (function() {
     };
 })());
 
-// Save the most recent sitename and update the environment list.
-document.getElementById('custom_sitename').addEventListener('change', (function() {
-    var sitenameElement = document.getElementById('custom_sitename'),
+// Save the custom sitename and update the environment list.
+// The code is nearly the same as the handler for changing the sitename except
+// that it doesn't need the "sitename === 'other'" case and it uses the
+// custom-sitename field as the sitename element. However, the code has not
+// been combined because tracking the last input (lastSite) for two fields in
+// a single handler gets unnecessarily complicated.
+document.getElementById('custom-sitename').addEventListener('change', (function() {
+    var sitenameElement = document.getElementById('custom-sitename'),
         environmentElement = document.getElementById('environment'),
         lastSite;
 
@@ -639,10 +649,7 @@ chrome.storage.local.get({
             document.getElementById('credentials-error').classList.remove('hidden');
         }
 
-        var acquiaRegex = new RegExp("@acquia\.com$", 'm');
-        if (acquiaRegex.test(items.username)) {
-            acquiaUser = true;
-        }
+        acquiaUser = isAcquianRegex.test(items.username);
 
         onlyMe = items.onlyme;
         document.getElementById('show-only-me').checked = !!onlyMe;
@@ -672,7 +679,7 @@ chrome.storage.local.get({
 document.getElementById('connect').addEventListener('click', (function() {
     var connectButton = document.getElementById('connect'),
         sitenameElement = document.getElementById('sitename'),
-        customSitenameElement = document.getElementById('custom_sitename'),
+        customSitenameElement = document.getElementById('custom-sitename'),
         environmentElement = document.getElementById('environment'),
         ws;
 
@@ -694,13 +701,13 @@ document.getElementById('connect').addEventListener('click', (function() {
     return function(event) {
         event.preventDefault();
         if (typeof ws === 'undefined' || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
-            var site       = sitenameElement.value,
-                customSite = customSitenameElement.value,
-                env        = environmentElement.value;
+            var site = sitenameElement.value,
+                env  = environmentElement.value;
 
             if (site === 'other') {
-                site = customSite;
+                site = customSitenameElement.value;
             }
+
             if (!site) {
                 return showMessage(t('errors_invalidSitename'), 'info', null, 'extension-error');
             }
@@ -786,7 +793,7 @@ document.getElementById('content').addEventListener('click', function(event) {
     }
 });
 
-// Update the credentials error, sitename list, and environment list when the Acquia Cloud credentials change.
+// React when the Acquia Cloud credentials are changed.
 chrome.storage.onChanged.addListener((function() {
     function onCredentialsChanged(items) {
         logIfError('errors_getCredentialsFailed');
@@ -797,6 +804,8 @@ chrome.storage.onChanged.addListener((function() {
         }
         document.getElementById('export-wrapper').classList.remove('hidden');
         document.getElementById('credentials-error').classList.add('hidden');
+
+        acquiaUser = isAcquianRegex.test(items.username);
 
         resetSitenameList({}, items.sitename);
     }

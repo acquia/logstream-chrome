@@ -53,13 +53,17 @@
         "message": "Sitename:",
         "description": "The label of the sitename select element on the log streaming panel."
     },
-    "panel_custom_sitename": {
+    "panel_customSitename": {
         "message": "Custom Sitename:",
-        "description": "The label of the sitename select element on the log streaming panel."
+        "description": "The label of the custom sitename textfield on the log streaming panel that is available to Acquia Support users."
     },
-    "panel_custom_sitenameInfo": {
+    "panel_customSitenameInfo": {
         "message": "e.g. realm:sitename",
-        "description": "The placeholder text of the textfield on the log streaming panel that allows a custom sitename to be specified for Acquia admin."
+        "description": "The placeholder text of the textfield on the log streaming panel that allows a custom sitename to be specified for Acquia Support users."
+    },
+    "panel_customSitenameOther": {
+        "message": "other",
+        "description": "The name of the option Acquia Support users choose in the sitename select element on the log streaming panel in order to enter a custom sitename."
     },
     "panel_environment": {
         "message": "Environment:",
