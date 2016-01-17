@@ -9,6 +9,7 @@ module.exports = function(grunt) {
           alert: false,
           chrome: false,
           module: true,
+          performance: false, // should be included in `browser` in 0.11.4
         },
         latedef: 'nofunc', // disallow using variables before they're defined
         nonbsp: true, // disallow non-breaking spaces
