@@ -323,6 +323,14 @@ select[multiple]:focus {
     outline: 0 none;
 }
 
+/* These properties limit the layout scope, preventing thrashing when messages are added and removed. */
+#content {
+    display: block;
+    height: 15000px;
+    overflow: hidden;
+    width: 100%;
+}
+
 .message {
     border-bottom: 1px solid #999999;
     padding: 2px;
@@ -334,9 +342,12 @@ select[multiple]:focus {
 
 .collapsed {
     cursor: pointer;
+    display: block;
+    height: 25px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    width: 100%;
 }
 
 .datetime {

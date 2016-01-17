@@ -92,10 +92,17 @@ var logTypes = {
 var showMessage = (function() {
     // This works because we load the script after the container element.
     var container = document.getElementById('content'),
+        queue = [],
         queuedLogs = document.createDocumentFragment(),
         messageDate = new Date(),
+        lastWritten = performance.now(),
+        lastWriteIntervalChange = lastWritten,
         elemCount = 0,
-        ELEMCOUNT_MAX = 1000,
+        ELEMCOUNT_MAX = 500,
+        MIN_WRITE_INTERVAL_DOUBLE = 120,
+        MAX_WRITE_INTERVAL_HALF = 480,
+        MIN_WRITE_INTERVAL_REDUCTION_DELAY = MAX_WRITE_INTERVAL_HALF * 10,
+        writeInterval = Math.round(MIN_WRITE_INTERVAL_DOUBLE / 2),
         formatDate = new Intl.DateTimeFormat(new Intl.DateTimeFormat().resolvedOptions().locale, {
             year: 'numeric',
             month: '2-digit',
@@ -114,7 +121,19 @@ var showMessage = (function() {
     });
 
     requestAnimationFrame(function writeLogs() {
-        if (queuedLogs.children.length) {
+        var before = performance.now(),
+            after = before,
+            l = queue.length;
+        if (before - lastWritten > writeInterval && l) {
+            lastWritten = before;
+
+            // Add new log messages to the stream.
+            for (var i = Math.max(0, l - ELEMCOUNT_MAX); i < l; i++) {
+                queuedLogs.appendChild(renderLog(queue[i]));
+                elemCount++;
+            }
+            queue.length = 0;
+
             // Inserting a DocumentFragment removes its children.
             // http://dom.spec.whatwg.org/#concept-node-insert
             container.insertBefore(queuedLogs, container.firstChild);
@@ -125,15 +144,45 @@ var showMessage = (function() {
                 elemCount--;
             }
         }
+
+        after = performance.now();
+        if (after - lastWriteIntervalChange > MIN_WRITE_INTERVAL_REDUCTION_DELAY &&
+                after - before < writeInterval / 2 &&
+                writeInterval >= MIN_WRITE_INTERVAL_DOUBLE) {
+            writeInterval = Math.round(writeInterval / 2);
+            lastWriteIntervalChange = after;
+        }
+        else if (after - before >= writeInterval &&
+                writeInterval <= MAX_WRITE_INTERVAL_HALF) {
+            writeInterval = Math.round(writeInterval * 2);
+            lastWriteIntervalChange = after;
+        }
+
         requestAnimationFrame(writeLogs);
     });
 
+    // Turn an argument list into HTML representing a log message.
+    // args is [type[, classes...], datetime, message]
+    function renderLog(args) {
+        var message = args.pop(),
+            datetime = args.pop(),
+            el = document.createElement('div'), // wrapper element
+            dt = document.createElement('span'), // datetime
+            ty = document.createElement('span'); // type of log
+        el.classList.add.apply(el.classList, args);
+        el.classList.add('message', 'collapsed');
+        dt.classList.add('datetime');
+        ty.classList.add('type');
+        dt.textContent = datetime;
+        ty.textContent = logTypes[args[0]].name;
+        el.appendChild(dt);
+        el.appendChild(ty);
+        el.appendChild(document.createTextNode(message));
+        return el;
+    }
+
     /**
-     * Logs a message to the logstream devtools panel.
-     *
-     * For performance reasons, the message is not appended to the document
-     * during this function's execution; instead, it is queued to be added
-     * the next time a frame is being painted.
+     * Queues a message to be logged to the logstream devtools panel.
      *
      * @param {String} message
      *   The message to show.
@@ -144,36 +193,26 @@ var showMessage = (function() {
      *   some other string that can be parsed by `Date.parse()`. If falsy, this
      *   is generated as the current time.
      * @param {String} [...]
-     *   Additional parameters are added as classes to the log's DOM element.
+     *   Additional parameters are added as classes to the log message's DOM
+     *   element.
      */
     return function showMessage(message, type, datetime) {
-        type = type ? type+'' : 'info';
-        if (!logTypes[type].enabled) {
+        var l = Math.max(3, arguments.length),
+            args = new Array(l);
+        args[0] = type ? type + '' : 'info';
+
+        if (!logTypes[args[0]].enabled) {
             return;
         }
-        var el = document.createElement('div'), // wrapper element
-            dt = document.createElement('span'), // datetime
-            ty = document.createElement('span'), // type of log
-            tx = document.createElement('span'), // text of log message
-            args = Array.prototype.slice.call(arguments, 3);
-        args.push('message', 'collapsed', type);
-        el.classList.add.apply(el.classList, args);
-        dt.classList.add('datetime');
-        ty.classList.add('type');
-        try {
-            messageDate.setTime(datetime ? Date.parse(datetime) : Date.now());
-            dt.textContent = formatDate(messageDate);
+
+        for (var i = 3; i < l; i++) {
+            args[i-2] = arguments[i];
         }
-        catch(e) {
-            dt.textContent = datetime;
-        }
-        ty.textContent = logTypes[type].name;
-        tx.textContent = message;
-        el.appendChild(dt);
-        el.appendChild(ty);
-        el.innerHTML += tx.textContent;
-        queuedLogs.insertBefore(el, queuedLogs.firstChild);
-        elemCount++;
+
+        messageDate.setTime(Date.parse(datetime) || Date.now());
+        args[l-2] = formatDate(messageDate);
+        args[l-1] = message;
+        queue.push(args);
     };
 })();
 
@@ -234,84 +273,79 @@ function setupWebSocket(connectionInfo) {
     };
 
     ws.onmessage = function(event) {
-        try {
-            var data = JSON.parse(event.data);
-            if (data.cmd === 'connected') {
-                // Streaming connection opened.
-                if (data.server.indexOf('logstream-') === 0) {
-                    showMessage(t('info_connected'));
-                }
-                // Streaming from a specific server is enabled.
-                else {
-                    showMessage(t('info_connectedToServer', data.server), 'debug', null, 'received');
-                }
-            }
-            else if (data.cmd === 'error') {
-                showMessage(t('errors_serverSideTrouble', event.data), 'debug', null, 'received', 'extension-error');
-            }
-            else if (data.cmd === 'success') {
-                // A keep-alive message succeeded.
-                if (data.msg.cmd === 'keepalive') {
-                    showMessage(t('info_keepalive'), 'debug', null, 'received');
-                }
-                // A log type was successfully enabled.
-                else if (data.msg.cmd === 'enable') {
-                    showMessage(t('info_logTypeEnabled', [
-                        logTypes[data.msg.type].name, data.server,
-                    ]), 'debug', null, 'received');
+        var data = JSON.parse(event.data);
+        if (data.cmd === 'line') {
+            if ((!(onlyMe      instanceof RegExp) ||      onlyMe.test(data.text)) &&
+                (!(regexFilter instanceof RegExp) || regexFilter.test(data.text))) {
+                // At the time of writing, Cloud always streams UTC times,
+                // but does not make the timezone explicit in the disp_time string.
+                // showMessage() will assume local time if the timezone is not explicit,
+                // so we need to add a UTC timezone indicator.
+                data.disp_time += ' +0000';
+                if (typeof data.http_status === 'undefined') {
+                    showMessage(data.text, data.log_type, data.disp_time, 'log');
                 }
                 else {
-                    showMessage(event.data, 'debug', null, 'received');
+                    showMessage(data.text, data.log_type, data.disp_time, 'log', 'http-status-' +
+                        (data.http_status < 400 ? 200 : 100 * Math.floor(data.http_status / 100))
+                    );
                 }
             }
-            else if (data.cmd === 'available') {
-                showMessage(t('info_logTypeAvailable', [
-                    data.display_type, data.server,
+        }
+        else if (data.cmd === 'connected') {
+            // Streaming connection opened.
+            if (data.server.indexOf('logstream-') === 0) {
+                showMessage(t('info_connected'));
+            }
+            // Streaming from a specific server is enabled.
+            else {
+                showMessage(t('info_connectedToServer', data.server), 'debug', null, 'received');
+            }
+        }
+        else if (data.cmd === 'error') {
+            showMessage(t('errors_serverSideTrouble', event.data), 'debug', null, 'received', 'extension-error');
+        }
+        else if (data.cmd === 'success') {
+            // A keep-alive message succeeded.
+            if (data.msg.cmd === 'keepalive') {
+                showMessage(t('info_keepalive'), 'debug', null, 'received');
+            }
+            // A log type was successfully enabled.
+            else if (data.msg.cmd === 'enable') {
+                showMessage(t('info_logTypeEnabled', [
+                    logTypes[data.msg.type].name, data.server,
                 ]), 'debug', null, 'received');
-                if (typeof logTypes[data.type] === 'undefined') {
-                    logTypes[data.type] = new LogType(data.display_type);
-                    var op = document.createElement('option');
-                    op.setAttribute('selected', '');
-                    op.value = data.type;
-                    op.textContent = data.display_type;
-                    logTypesElement.appendChild(op);
-                }
-                if (logTypes[data.type].enabled) {
-                    var msg = JSON.stringify({
-                        cmd: 'enable',
-                        type: data.type,
-                        server: data.server,
-                    });
-                    showMessage(t('info_requestEnableLogType', [
-                        data.display_type, data.server,
-                    ]), 'debug', null, 'sent');
-                    ws.send(msg);
-                }
-            }
-            else if (data.cmd === 'line') {
-                if ((!(onlyMe      instanceof RegExp) ||      onlyMe.test(data.text)) &&
-                    (!(regexFilter instanceof RegExp) || regexFilter.test(data.text))) {
-                    // At the time of writing, Cloud always streams UTC times,
-                    // but does not make the timezone explicit in the disp_time string.
-                    // showMessage() will assume local time if the timezone is not explicit,
-                    // so we need to add a UTC timezone indicator.
-                    data.disp_time += ' +0000';
-                    if (typeof data.http_status === 'undefined') {
-                        showMessage(data.text, data.log_type, data.disp_time, 'log');
-                    }
-                    else {
-                        showMessage(data.text, data.log_type, data.disp_time, 'log', 'http-status-' +
-                            (data.http_status < 400 ? 200 : 100 * Math.floor(data.http_status / 100))
-                        );
-                    }
-                }
             }
             else {
                 showMessage(event.data, 'debug', null, 'received');
             }
         }
-        catch(e) {
-            showMessage(t('errors_logEventHandlingFailed', e.stack), 'debug', null, 'extension-error', 'here');
+        else if (data.cmd === 'available') {
+            showMessage(t('info_logTypeAvailable', [
+                data.display_type, data.server,
+            ]), 'debug', null, 'received');
+            if (typeof logTypes[data.type] === 'undefined') {
+                logTypes[data.type] = new LogType(data.display_type);
+                var op = document.createElement('option');
+                op.setAttribute('selected', '');
+                op.value = data.type;
+                op.textContent = data.display_type;
+                logTypesElement.appendChild(op);
+            }
+            if (logTypes[data.type].enabled) {
+                var msg = JSON.stringify({
+                    cmd: 'enable',
+                    type: data.type,
+                    server: data.server,
+                });
+                showMessage(t('info_requestEnableLogType', [
+                    data.display_type, data.server,
+                ]), 'debug', null, 'sent');
+                ws.send(msg);
+            }
+        }
+        else {
+            showMessage(event.data, 'debug', null, 'received');
         }
     };
 

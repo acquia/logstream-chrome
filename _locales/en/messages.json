@@ -382,15 +382,6 @@
             }
         }
     },
-    "errors_logEventHandlingFailed": {
-        "message": "Error receiving event: $error$",
-        "description": "A debug message that displays in the log stream when handling a log message fails.",
-        "placeholders": {
-            "error": {
-                "content": "$1"
-            }
-        }
-    },
     "errors_wsError": {
         "message": "An error occurred in the log streaming connection.",
         "description": "An informational message that displays in the log stream when an error occurs in the WebSocket connection."
