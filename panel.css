@@ -67,6 +67,10 @@ a:active {
     font-weight: normal;
 }
 
+.options-page #content {
+    height: auto;
+}
+
 input[type=text],
 input[type=password] {
     background-color: #ffffff;

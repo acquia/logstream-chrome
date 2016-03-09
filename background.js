@@ -57,7 +57,7 @@ function getCloudInfo(user, pass, path, sendResponse) {
             });
         }
     };
-    xhr.setRequestHeader('Authorization', 'Basic ' + btoa(user + ':' + pass));
+    xhr.setRequestHeader('Authorization', 'Basic ' + btoa(unescape(encodeURIComponent(user + ':' + pass))));
     xhr.send(null);
 }
 

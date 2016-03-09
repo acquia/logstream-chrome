@@ -37,7 +37,7 @@ var checkCreds = (function() {
                 }
             }
         };
-        xhr.setRequestHeader('Authorization', 'Basic ' + btoa(user + ':' + pass));
+        xhr.setRequestHeader('Authorization', 'Basic ' + btoa(unescape(encodeURIComponent(user + ':' + pass))));
         try {
             xhr.send(null);
         }
