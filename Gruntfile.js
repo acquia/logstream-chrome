@@ -10,6 +10,7 @@ module.exports = function(grunt) {
           chrome: false,
           module: true,
           performance: false, // should be included in `browser` in 0.11.4
+          unescape: false, // deprecated, but useful for a UTF-8 shortcut
         },
         latedef: 'nofunc', // disallow using variables before they're defined
         nonbsp: true, // disallow non-breaking spaces

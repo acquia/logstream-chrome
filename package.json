@@ -1,6 +1,6 @@
 {
     "name": "Logstream",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "View logs generated as you browse around your site.",
     "readmeFilename": "README.md",
     "devDependencies": {
