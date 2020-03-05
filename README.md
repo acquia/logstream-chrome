@@ -32,3 +32,8 @@ website and watch as the logs are generated in real time.
 ## Video
 
 ![Logstream video](logstream-video.gif)
+
+## Extension in the Google Chrome Store
+The extensions is available in the [Google Chrome webstore](https://chrome.google.com/webstore/detail/acquia-cloud-logstream-cl/pnpolgbojealkmfopnjlkaabicpdlhbg) for download. 
+
+This is managed through the [Google Web Store Developers portal](https://chrome.google.com/webstore/devconsole/) which is tied to a Group Publisher associated with the chrome-developers@acquia google group. In order to modify or update this plugin you must be part of the Google Group and have paid the Google Developers registration fee via the Developers portal.
